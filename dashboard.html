@@ -342,14 +342,6 @@ function renderMain(){
           <label>開賣日</label>
           <div class="v ${data.launchDate?'':'empty'}">${data.launchDate ? (data.launchDate + '（' + weekdayLabel(data.launchDate) + '）') : '未填寫'}</div>
         </div>
-        <div class="meta-item">
-          <label>賣場連結</label>
-          <div class="v ${data.storeLink?'':'empty'}">${data.storeLink ? `<a href="${escapeHtml(data.storeLink)}" target="_blank" rel="noopener">${escapeHtml(data.storeLink)}</a>` : '未填寫'}</div>
-        </div>
-        <div class="meta-item" style="grid-column:1/-1;">
-          <label>商品賣點 / 補充說明</label>
-          <div class="v ${data.globalBrief?'':'empty'}">${escapeHtml(data.globalBrief) || '未填寫'}</div>
-        </div>
       </div>
     </div>
 
