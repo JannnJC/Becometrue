@@ -337,10 +337,12 @@ function renderMain(){
         <div class="meta-item">
           <label>Mission</label>
           <div class="v ${data.missionText?'':'empty'}">${escapeHtml(data.missionText) || '未填寫'}</div>
-        </div>
-        <div class="meta-item">
-          <label>開賣日</label>
-          <div class="v ${data.launchDate?'':'empty'}">${data.launchDate ? (data.launchDate + '（' + weekdayLabel(data.launchDate) + '）') : '未填寫'}</div>
+      </div>
+
+      <div class="meta-item">
+        <label>開賣日</label>
+          <div class="v ${data.launchDate?'':'empty'}">
+          ${data.launchDate ? (data.launchDate + '（' + weekdayLabel(data.launchDate) + '）') : '未填寫'}
         </div>
       </div>
     </div>
