@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>投廣任務 · 儀表板</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg-page:#f2f4fa;
+    --bg-panel:#ffffff;
+    --bg-soft:#eef1f8;
+    --line:#e1e5ef;
+    --text-0:#171b26;
+    --text-1:#4d5566;
+    --text-2:#8891a4;
+    --accent:#3457d5;
+    --accent-soft:#3457d514;
+    --accent-line:#3457d540;
+    --teal:#0f8f74;
+    --teal-soft:#0f8f7414;
+    --gold:#a97a08;
+    --gold-soft:#a97a0814;
+    --pink:#c23a6b;
+    --pink-soft:#c23a6b14;
+    --orange:#c1591b;
+    --orange-soft:#c1591b14;
+    --danger:#d1435f;
+    --sans:'Inter', -apple-system, "PingFang TC", "Noto Sans TC", "Microsoft JhengHei", sans-serif;
+    --display:'Sora', var(--sans);
+    --mono:'JetBrains Mono', "SFMono-Regular", Consolas, monospace;
+    --radius:14px;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--bg-page);
+    color:var(--text-0);
+    font-family:var(--sans);
+    min-height:100vh;
+  }
+  .wrap{max-width:1180px; margin:0 auto; padding:0 20px 60px;}
+
+  /* topbar */
+  .topbar{
+    display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:14px;
+    padding:22px 20px; background:var(--bg-panel); border-bottom:1px solid var(--line);
+    position:sticky; top:0; z-index:20;
+  }
+  .brand{display:flex; align-items:center; gap:12px;}
+  .brand-mark{
+    width:36px; height:36px; border-radius:10px; background:linear-gradient(135deg, var(--accent), #6c8bff);
+    display:flex; align-items:center; justify-content:center; color:#fff; font-family:var(--display);
+    font-weight:800; font-size:15px; flex:none;
+  }
+  .brand-text h1{font-family:var(--display); font-size:17px; font-weight:700; margin:0; letter-spacing:.01em;}
+  .brand-text .sub{font-size:12px; color:var(--text-2); margin-top:1px;}
+  .topbar-right{display:flex; align-items:center; gap:14px; flex-wrap:wrap;}
+  .updated{font-family:var(--mono); font-size:12px; color:var(--text-2);}
+  .tbtn{
+    display:inline-flex; align-items:center; gap:6px;
+    background:var(--bg-panel); border:1px solid var(--line); color:var(--text-1);
+    border-radius:9px; padding:8px 13px; font-size:13px; font-family:var(--sans); font-weight:500;
+    cursor:pointer;
+  }
+  .tbtn:hover{border-color:var(--accent); color:var(--accent);}
+  .tbtn.primary{background:var(--accent); color:#fff; border-color:var(--accent);}
+  .tbtn.primary:hover{filter:brightness(1.08); color:#fff;}
+
+  /* project tabs */
+  .tabsbar{
+    display:flex; align-items:center; justify-content:space-between; gap:14px; flex-wrap:wrap;
+    padding:14px 20px; background:var(--bg-panel); border-bottom:1px solid var(--line);
+    position:sticky; top:81px; z-index:19;
+  }
+  .ptabs{display:flex; gap:6px; flex-wrap:wrap;}
+  .ptab{
+    display:flex; align-items:center; gap:6px; padding:8px 14px; border-radius:9px;
+    font-size:13px; font-weight:500; color:var(--text-1); cursor:pointer; border:1px solid transparent;
+  }
+  .ptab:hover{background:var(--bg-soft);}
+  .ptab.active{background:var(--accent-soft); color:var(--accent); border-color:var(--accent-line);}
+  .empty-tabs{font-size:13px; color:var(--text-2);}
+
+  main{padding-top:26px;}
+
+  /* stat cards */
+  .stats-grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(190px,1fr)); gap:14px; margin-bottom:22px;}
+  .stat-card{
+    background:var(--bg-panel); border:1px solid var(--line); border-radius:var(--radius); padding:18px 20px;
+  }
+  .stat-card label{display:block; font-size:12px; color:var(--text-2); margin-bottom:8px; font-weight:500;}
+  .stat-card .v{font-family:var(--mono); font-size:24px; font-weight:600; letter-spacing:-.01em;}
+  .stat-card.remain .v.neg{color:var(--danger);}
+  .stat-card.remain .v.ok{color:var(--teal);}
+
+  .ledger{margin-bottom:22px; background:var(--bg-panel); border:1px solid var(--line); border-radius:var(--radius); padding:18px 20px;}
+  .ledger-head{display:flex; justify-content:space-between; align-items:baseline; margin-bottom:10px;}
+  .ledger-head .pct{font-family:var(--mono); font-size:13px; color:var(--text-1);}
+  .ledger-track{height:10px; border-radius:999px; background:var(--bg-soft); overflow:hidden; position:relative;}
+  .ledger-fill{
+    height:100%; border-radius:999px;
+    background:repeating-linear-gradient(-45deg, var(--accent) 0 8px, #6c8bff 8px 16px);
+  }
+
+  /* panel */
+  .panel{background:var(--bg-panel); border:1px solid var(--line); border-radius:var(--radius); padding:22px; margin-bottom:22px;}
+  .panel h2{
+    font-family:var(--display); font-size:15px; font-weight:700; margin:0 0 16px; letter-spacing:.01em;
+    display:flex; align-items:center; gap:8px;
+  }
+  .panel h2::before{content:""; width:7px; height:7px; border-radius:2px; background:var(--accent); display:inline-block;}
+
+  /* meta grid */
+  .meta-grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:16px;}
+  .meta-item label{display:block; font-size:11px; color:var(--text-2); margin-bottom:5px; font-weight:600; text-transform:uppercase; letter-spacing:.05em;}
+  .meta-item .v{font-size:14px; color:var(--text-0); line-height:1.5; word-break:break-word;}
+  .meta-item .v.empty{color:var(--text-2); font-style:normal;}
+  .meta-item a{color:var(--accent); text-decoration:none;}
+  .meta-item a:hover{text-decoration:underline;}
+
+  /* table */
+  table{width:100%; border-collapse:collapse;}
+  thead th{
+    text-align:left; font-size:11px; color:var(--text-2); text-transform:uppercase; letter-spacing:.04em;
+    padding:0 10px 10px; border-bottom:1px solid var(--line); font-weight:600; white-space:nowrap;
+  }
+  tbody td{padding:12px 10px; border-bottom:1px solid var(--line); font-size:13px; vertical-align:top;}
+  tbody tr:last-child td{border-bottom:none;}
+  tbody tr:hover{background:var(--bg-soft);}
+  .rowname{font-weight:600; color:var(--text-0);}
+  .rowdate{font-family:var(--mono); font-size:12.5px;}
+  .rowweekday{color:var(--text-2); font-size:11px; margin-top:2px;}
+  .num{font-family:var(--mono);}
+  .brief-cell{color:var(--text-1); font-size:12.5px; max-width:220px;}
+
+  .badge-goal{
+    display:inline-block; padding:3px 10px; border-radius:999px; font-size:12px; font-weight:600;
+  }
+  .badge-goal.g-sale{background:var(--pink-soft); color:var(--pink);}
+  .badge-goal.g-eng{background:var(--gold-soft); color:var(--gold);}
+  .badge-goal.g-traffic{background:var(--teal-soft); color:var(--teal);}
+  .badge-goal.g-watch{background:var(--orange-soft); color:var(--orange);}
+  .badge-goal.g-view{background:var(--bg-soft); color:var(--text-1);}
+
+  /* empty state */
+  .emptystate{
+    text-align:center; padding:70px 20px; color:var(--text-2);
+  }
+  .emptystate .big{font-family:var(--display); font-size:19px; color:var(--text-0); margin-bottom:10px; font-weight:700;}
+  .emptystate p{font-size:14px; line-height:1.7; max-width:440px; margin:0 auto 20px;}
+  .emptystate .tbtn{margin:0 6px;}
+
+  @media (max-width:640px){
+    .topbar, .tabsbar{padding:16px;}
+    .tabsbar{top:73px;}
+  }
+</style>
+</head>
+<body>
+
+  <div class="topbar">
+    <div class="brand">
+      <div class="brand-mark">AD</div>
+      <div class="brand-text">
+        <h1>投廣任務控制台</h1>
+        <div class="sub">唯讀儀表板 · 僅供瀏覽</div>
+      </div>
+    </div>
+    <div class="topbar-right">
+      <span class="updated" id="updatedAt"></span>
+      <button type="button" class="tbtn" id="importBtn">⬆ 匯入專案檔</button>
+      <input type="file" id="importFile" accept="application/json" style="display:none;">
+      <button type="button" class="tbtn primary" id="refreshBtn">🔄 重新讀取</button>
+    </div>
+  </div>
+
+  <div class="tabsbar">
+    <div class="ptabs" id="ptabs"></div>
+  </div>
+
+  <div class="wrap">
+    <main id="main"></main>
+  </div>
+
+<script>
+const STORAGE_KEY = 'adBudgetTool_projects_v1';
+let projects = [];
+let activeProjectId = null;
+
+function fmt(n){ return 'NT$' + Math.round(n||0).toLocaleString(); }
+function days(start,end){
+  if(!start||!end) return 0;
+  const s = new Date(start), e = new Date(end);
+  const d = Math.round((e-s)/(1000*60*60*24))+1;
+  return d>0?d:0;
+}
+function weekdayLabel(dateStr){
+  if(!dateStr) return '';
+  const names = ['週日','週一','週二','週三','週四','週五','週六'];
+  const dt = new Date(dateStr + 'T00:00:00');
+  if(isNaN(dt.getTime())) return '';
+  return names[dt.getDay()];
+}
+function goalBadgeClass(g){
+  if(g==='銷售') return 'g-sale';
+  if(g==='互動') return 'g-eng';
+  if(g==='導流') return 'g-traffic';
+  if(g==='觀看') return 'g-watch';
+  return 'g-view';
+}
+function escapeHtml(s){
+  return (s||'').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+function loadFromLocalStorage(){
+  try{
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if(!raw) return null;
+    const parsed = JSON.parse(raw);
+    if(!parsed || !Array.isArray(parsed.projects) || parsed.projects.length===0) return null;
+    return parsed;
+  }catch(e){ return null; }
+}
+
+function setUpdatedNow(){
+  const now = new Date();
+  const pad = n => String(n).padStart(2,'0');
+  document.getElementById('updatedAt').textContent =
+    `檢視時間 ${now.getFullYear()}/${pad(now.getMonth()+1)}/${pad(now.getDate())} ${pad(now.getHours())}:${pad(now.getMinutes())}`;
+}
+
+function loadAndRender(){
+  const saved = loadFromLocalStorage();
+  if(saved){
+    projects = saved.projects;
+    activeProjectId = projects.find(p=>p.id===saved.activeProjectId) ? saved.activeProjectId : projects[0].id;
+  }else{
+    projects = [];
+    activeProjectId = null;
+  }
+  setUpdatedNow();
+  renderTabs();
+  renderMain();
+}
+
+function renderTabs(){
+  const bar = document.getElementById('ptabs');
+  bar.innerHTML = '';
+  if(projects.length===0){
+    bar.innerHTML = '<span class="empty-tabs">尚未載入任何專案</span>';
+    return;
+  }
+  projects.forEach(p=>{
+    const tab = document.createElement('div');
+    tab.className = 'ptab' + (p.id===activeProjectId ? ' active' : '');
+    tab.innerHTML = `📁 ${escapeHtml(p.name)}`;
+    tab.addEventListener('click', ()=>{
+      activeProjectId = p.id;
+      renderTabs();
+      renderMain();
+    });
+    bar.appendChild(tab);
+  });
+}
+
+function renderMain(){
+  const main = document.getElementById('main');
+  const project = projects.find(p=>p.id===activeProjectId);
+
+  if(!project){
+    main.innerHTML = `
+      <div class="emptystate">
+        <div class="big">目前沒有可以顯示的專案資料</div>
+        <p>如果你是在跟編輯版相同的瀏覽器開啟這個頁面，按「重新讀取」應該就能看到資料。<br>
+        如果是別人分享給你看，請請對方從編輯版按「⬇ 匯出這個專案」，把 .json 檔傳給你，再用下面的按鈕匯入。</p>
+        <button type="button" class="tbtn primary" id="emptyImportBtn">⬆ 匯入專案檔</button>
+      </div>
+    `;
+    document.getElementById('emptyImportBtn').addEventListener('click', ()=>{
+      document.getElementById('importFile').click();
+    });
+    return;
+  }
+
+  const data = project.data || {};
+  const rows = data.rows || [];
+  const total = parseFloat(data.totalBudget||0);
+  const used = rows.reduce((sum,r)=> sum + (r.subtotal!==undefined ? (r.subtotal||0) : days(r.start,r.end)*(r.daily||0)), 0);
+  const remain = total - used;
+  const pct = total>0 ? Math.min(100, (used/total)*100) : 0;
+
+  const rowsHtml = rows.map(r=>{
+    const d = days(r.start,r.end);
+    const subtotal = r.subtotal!==undefined ? r.subtotal : d*(r.daily||0);
+    return `
+      <tr>
+        <td class="rowname">${escapeHtml(r.name || '(未命名貼文)')}</td>
+        <td><span class="badge-goal ${goalBadgeClass(r.goal)}">${escapeHtml(r.goal||'')}</span></td>
+        <td>
+          <div class="rowdate">${r.start||'—'}</div>
+          <div class="rowweekday">${weekdayLabel(r.start)}</div>
+        </td>
+        <td>
+          <div class="rowdate">${r.end||'—'}</div>
+          <div class="rowweekday">${weekdayLabel(r.end)}</div>
+        </td>
+        <td class="num">${d}天</td>
+        <td class="num">${fmt(r.daily)}</td>
+        <td class="num">${fmt(subtotal)}</td>
+        <td class="brief-cell">${escapeHtml(r.brief||'—')}</td>
+      </tr>
+    `;
+  }).join('');
+
+  main.innerHTML = `
+    <div class="stats-grid">
+      <div class="stat-card"><label>總預算</label><div class="v">${fmt(total)}</div></div>
+      <div class="stat-card"><label>已分配</label><div class="v">${fmt(used)}</div></div>
+      <div class="stat-card remain"><label>剩餘</label><div class="v ${remain<0?'neg':'ok'}">${fmt(remain)}</div></div>
+      <div class="stat-card"><label>貼文數</label><div class="v">${rows.length}</div></div>
+    </div>
+
+    <div class="ledger">
+      <div class="ledger-head">
+        <span style="font-size:13px;color:var(--text-1);font-weight:500;">預算使用進度</span>
+        <span class="pct">${pct.toFixed(1)}%</span>
+      </div>
+      <div class="ledger-track"><div class="ledger-fill" style="width:${pct}%"></div></div>
+    </div>
+
+    <div class="panel">
+      <h2>任務資訊</h2>
+      <div class="meta-grid">
+        <div class="meta-item">
+          <label>Mission</label>
+          <div class="v ${data.missionText?'':'empty'}">${escapeHtml(data.missionText) || '未填寫'}</div>
+        </div>
+        <div class="meta-item">
+          <label>開賣日</label>
+          <div class="v ${data.launchDate?'':'empty'}">${data.launchDate ? (data.launchDate + '（' + weekdayLabel(data.launchDate) + '）') : '未填寫'}</div>
+        </div>
+        <div class="meta-item">
+          <label>賣場連結</label>
+          <div class="v ${data.storeLink?'':'empty'}">${data.storeLink ? `<a href="${escapeHtml(data.storeLink)}" target="_blank" rel="noopener">${escapeHtml(data.storeLink)}</a>` : '未填寫'}</div>
+        </div>
+        <div class="meta-item" style="grid-column:1/-1;">
+          <label>商品賣點 / 補充說明</label>
+          <div class="v ${data.globalBrief?'':'empty'}">${escapeHtml(data.globalBrief) || '未填寫'}</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h2>貼文投廣排期（共 ${rows.length} 篇）</h2>
+      ${rows.length ? `
+      <table>
+        <thead>
+          <tr>
+            <th>貼文名稱</th>
+            <th>優化目的</th>
+            <th>開始日期</th>
+            <th>結束日期</th>
+            <th>天數</th>
+            <th>日預算</th>
+            <th>小計</th>
+            <th>文案重點</th>
+          </tr>
+        </thead>
+        <tbody>${rowsHtml}</tbody>
+      </table>
+      ` : `<div style="color:var(--text-2); font-size:13px;">這個專案目前還沒有任何貼文排期。</div>`}
+    </div>
+  `;
+}
+
+function importProjectFile(file){
+  const reader = new FileReader();
+  reader.onload = ()=>{
+    try{
+      const parsed = JSON.parse(reader.result);
+      let importedProjects = [];
+      if(parsed && Array.isArray(parsed.projects)){
+        // 完整備份格式 {projects, activeProjectId}
+        importedProjects = parsed.projects;
+      }else if(parsed && parsed.data){
+        // 單一專案匯出格式 {name, data}
+        importedProjects = [{ id: Date.now(), name: parsed.name || '匯入的專案', data: parsed.data }];
+      }else{
+        throw new Error('格式不正確');
+      }
+      // 併入現有清單，避免同名
+      importedProjects.forEach(p=>{
+        const existingNames = projects.map(x=>x.name);
+        let name = p.name, n = 2;
+        while(existingNames.includes(name)){ name = `${p.name} (${n++})`; }
+        const id = Date.now() + Math.floor(Math.random()*1000);
+        projects.push({id, name, data: p.data});
+        activeProjectId = id;
+      });
+      setUpdatedNow();
+      renderTabs();
+      renderMain();
+    }catch(e){
+      alert_fallback('匯入失敗：檔案格式不正確');
+    }
+  };
+  reader.readAsText(file);
+}
+
+function alert_fallback(msg){
+  // 簡易提示（此頁為唯讀瀏覽用途，沒有另外做自訂彈窗）
+  const main = document.getElementById('main');
+  const note = document.createElement('div');
+  note.textContent = msg;
+  note.style.cssText = 'background:#fdecef;border:1px solid #f2c6d0;color:#b0304f;padding:12px 16px;border-radius:10px;font-size:13px;margin-bottom:16px;';
+  main.prepend(note);
+  setTimeout(()=>note.remove(), 4000);
+}
+
+document.getElementById('refreshBtn').addEventListener('click', loadAndRender);
+document.getElementById('importBtn').addEventListener('click', ()=>{
+  document.getElementById('importFile').click();
+});
+document.getElementById('importFile').addEventListener('change', (e)=>{
+  const file = e.target.files[0];
+  if(file) importProjectFile(file);
+  e.target.value = '';
+});
+
+loadAndRender();
+</script>
+</body>
+</html>

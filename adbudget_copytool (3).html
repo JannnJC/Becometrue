@@ -1,0 +1,1021 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>投廣任務控制台</title>
+<style>
+  :root{
+    --bg-0:#12141b;
+    --bg-1:#1b1e28;
+    --bg-2:#232735;
+    --line:#343a4d;
+    --text-0:#f4efe2;
+    --text-1:#b9bccb;
+    --text-2:#7d8299;
+    --orange:#e07a2c;
+    --orange-dim:#e07a2c33;
+    --gold:#f0bd4a;
+    --teal:#57b8a3;
+    --pink:#e0708f;
+    --danger:#e0708f;
+    --mono: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+    --sans: -apple-system, "PingFang TC", "Noto Sans TC", "Microsoft JhengHei", "Segoe UI", sans-serif;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:
+      radial-gradient(ellipse 900px 500px at 15% -10%, #e07a2c22, transparent 60%),
+      radial-gradient(ellipse 700px 500px at 100% 0%, #f0bd4a1a, transparent 55%),
+      var(--bg-0);
+    color:var(--text-0);
+    font-family:var(--sans);
+    padding:32px 20px 80px;
+    min-height:100vh;
+  }
+  .wrap{max-width:1180px;margin:0 auto;}
+
+  /* --- tape divider, signature motif --- */
+  .tape{
+    height:10px;
+    border-radius:2px;
+    background: repeating-linear-gradient(
+      -45deg,
+      var(--orange) 0px, var(--orange) 10px,
+      var(--gold) 10px, var(--gold) 20px
+    );
+    opacity:.85;
+    margin:28px 0;
+  }
+
+  header{display:flex; flex-wrap:wrap; align-items:flex-end; justify-content:space-between; gap:16px;}
+  .eyebrow{
+    font-family:var(--mono);
+    font-size:12px;
+    letter-spacing:.16em;
+    color:var(--gold);
+    text-transform:uppercase;
+    margin-bottom:8px;
+  }
+  .eyebrow input{
+    background:transparent; border:none; border-bottom:1px dashed var(--line); color:var(--gold);
+    font-family:var(--mono); font-size:12px; letter-spacing:.16em; text-transform:uppercase;
+    padding:0 2px; width:220px;
+  }
+  .eyebrow input:focus{outline:none; border-bottom-color:var(--orange);}
+  h1{
+    font-size:30px;
+    margin:0;
+    font-weight:800;
+    letter-spacing:.01em;
+  }
+  h1 span{color:var(--orange);}
+  .subtitle{color:var(--text-1); font-size:14px; margin-top:6px;}
+  .badge{
+    font-family:var(--mono);
+    font-size:12px;
+    color:var(--text-2);
+    border:1px solid var(--line);
+    border-radius:999px;
+    padding:6px 14px;
+    white-space:nowrap;
+  }
+  .datebadge{display:flex; align-items:center; gap:8px;}
+  .datebadge span{color:var(--text-2);}
+  .datebadge input[type=date]{
+    background:transparent; border:none; color:var(--gold); font-family:var(--mono);
+    font-size:12px; padding:0; width:auto;
+  }
+  .datebadge input[type=date]:focus{outline:none;}
+  .icsbtn{
+    background:none; border:1px solid var(--line); color:var(--text-2); border-radius:999px;
+    padding:6px 12px; font-size:12px; font-family:var(--mono); cursor:pointer;
+  }
+  .icsbtn:hover{border-color:var(--teal); color:var(--teal);}
+  .weekday{font-size:11px; color:var(--text-2); font-family:var(--mono); margin-top:4px; text-align:center;}
+  .datecell-foot{display:flex; align-items:center; justify-content:space-between; margin-top:4px;}
+  .icsbtn-row{
+    background:none; border:1px solid var(--line); color:var(--text-2); border-radius:6px;
+    padding:2px 6px; font-size:12px; cursor:pointer; line-height:1;
+  }
+  .icsbtn-row:hover{border-color:var(--teal); color:var(--teal);}
+
+  /* project tabs */
+  .projecttabs-wrap{display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; margin-top:22px;}
+  .projecttabs{display:flex; flex-wrap:wrap; gap:8px;}
+  .ptab{
+    display:flex; align-items:center; gap:6px; background:var(--bg-2); border:1px solid var(--line);
+    border-radius:8px 8px 0 0; padding:8px 10px; cursor:pointer; font-size:13px; color:var(--text-1);
+  }
+  .ptab.active{border-color:var(--orange); color:var(--text-0); background:var(--bg-1); border-bottom:2px solid var(--orange);}
+  .ptab-name{white-space:nowrap; max-width:160px; overflow:hidden; text-overflow:ellipsis;}
+  .ptab-icon{background:none; border:none; color:var(--text-2); cursor:pointer; font-size:12px; padding:2px;}
+  .ptab-icon:hover{color:var(--orange);}
+  .ptab-add{
+    background:none; border:1px dashed var(--line); color:var(--text-1); border-radius:8px;
+    padding:8px 12px; cursor:pointer; font-family:var(--mono); font-size:12px;
+  }
+  .ptab-add:hover{border-color:var(--orange); color:var(--orange);}
+  .projecttabs-actions{display:flex; gap:8px;}
+
+  /* custom modal (replaces confirm/alert/prompt, which don't work in every embedding context) */
+  .modal-overlay{
+    display:none; position:fixed; inset:0; background:#0008; z-index:999;
+    align-items:center; justify-content:center; padding:20px;
+  }
+  .modal-box{
+    background:var(--bg-1); border:1px solid var(--line); border-radius:12px;
+    padding:22px; max-width:360px; width:100%;
+  }
+  .modal-msg{color:var(--text-0); font-size:14px; margin-bottom:16px; line-height:1.6; white-space:pre-wrap;}
+  .modal-actions{display:flex; justify-content:flex-end; gap:10px;}
+
+  .panel{
+    background:var(--bg-1);
+    border:1px solid var(--line);
+    border-radius:14px;
+    padding:24px;
+    margin-top:20px;
+  }
+  .panel h2{
+    font-size:13px;
+    text-transform:uppercase;
+    letter-spacing:.12em;
+    color:var(--text-2);
+    margin:0 0 18px;
+    font-family:var(--mono);
+    display:flex; align-items:center; gap:10px;
+  }
+  .panel h2::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--orange);display:inline-block;}
+
+  /* budget overview */
+  .overview{display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:16px;}
+  .stat{background:var(--bg-2); border:1px solid var(--line); border-radius:10px; padding:14px 16px;}
+  .stat label{display:block; font-size:11px; color:var(--text-2); font-family:var(--mono); margin-bottom:6px;}
+  .stat input{
+    width:100%; background:transparent; border:none; color:var(--text-0);
+    font-family:var(--mono); font-size:20px; font-weight:700; padding:0;
+  }
+  .stat input:focus{outline:none;}
+  .stat .val{font-family:var(--mono); font-size:20px; font-weight:700;}
+  .stat.remain .val.neg{color:var(--danger);}
+  .stat.remain .val.ok{color:var(--teal);}
+
+  .barwrap{margin-top:16px; background:var(--bg-2); border-radius:8px; overflow:hidden; height:10px; border:1px solid var(--line);}
+  .bar{
+    height:100%;
+    background:repeating-linear-gradient(-45deg, var(--orange) 0 8px, var(--gold) 8px 16px);
+    width:0%;
+    transition:width .25s ease;
+  }
+
+  /* table */
+  table{width:100%; border-collapse:collapse; margin-top:4px;}
+  thead th{
+    text-align:left; font-family:var(--mono); font-size:11px; color:var(--text-2);
+    text-transform:uppercase; letter-spacing:.06em; padding:8px 8px; border-bottom:1px solid var(--line);
+    white-space:nowrap;
+  }
+  tbody td{padding:8px; border-bottom:1px solid var(--line); vertical-align:top;}
+  tbody tr:hover{background:#ffffff05;}
+  input[type=text], input[type=date], input[type=number], select, textarea{
+    width:100%; background:var(--bg-2); border:1px solid var(--line); color:var(--text-0);
+    border-radius:6px; padding:7px 8px; font-family:var(--sans); font-size:13px;
+  }
+  input[type=number]{font-family:var(--mono);}
+  textarea{resize:vertical; min-height:36px; font-size:12px;}
+  input:focus, select:focus, textarea:focus{outline:1px solid var(--orange); border-color:var(--orange);}
+  .readonly{background:transparent; border:none; font-family:var(--mono); color:var(--text-1); padding:7px 0;}
+  select.goal-sale{color:var(--pink);}
+  select.goal-eng{color:var(--gold);}
+
+  .rowbtn{
+    background:none; border:1px solid var(--line); color:var(--text-2); border-radius:6px;
+    padding:6px 9px; cursor:pointer; font-size:12px; font-family:var(--sans);
+  }
+  .rowbtn:hover{border-color:var(--danger); color:var(--danger);}
+
+  .draghandle{
+    cursor:grab; color:var(--text-2); font-size:16px; text-align:center;
+    user-select:none; padding:8px 4px;
+  }
+  .draghandle:hover{color:var(--orange);}
+  tr.dragging{opacity:.4;}
+  tr.drag-over{border-top:2px solid var(--orange);}
+  select.goal-traffic{color:var(--teal);}
+  select.goal-watch{color:var(--orange);}
+
+  .addrow{
+    margin-top:14px; background:none; border:1px dashed var(--line); color:var(--text-1);
+    border-radius:8px; padding:10px 16px; cursor:pointer; font-family:var(--mono); font-size:12px; width:100%;
+  }
+  .addrow:hover{border-color:var(--orange); color:var(--orange);}
+
+  /* copy generator */
+  .genrow{display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:16px;}
+  @media (max-width:720px){.genrow{grid-template-columns:1fr;}}
+  label.field-label{display:block; font-family:var(--mono); font-size:11px; color:var(--text-2); margin-bottom:6px; letter-spacing:.05em;}
+  .checkrow{display:flex; align-items:center; gap:8px; margin-top:10px; font-size:12px; color:var(--text-1);}
+  .checkrow input{width:auto;}
+
+  .genbtn{
+    background:linear-gradient(180deg, var(--orange), #c4611c);
+    color:#1b1206; border:none; border-radius:8px; padding:11px 20px; font-weight:700;
+    cursor:pointer; font-size:14px; font-family:var(--sans); margin-top:8px;
+  }
+  .genbtn:disabled{opacity:.5; cursor:wait;}
+  .genbtn:hover:not(:disabled){filter:brightness(1.08);}
+
+  .postpicker{display:flex; flex-wrap:wrap; gap:8px; margin-bottom:16px;}
+  .chip{
+    border:1px solid var(--line); border-radius:999px; padding:6px 14px; font-size:12px;
+    cursor:pointer; color:var(--text-1); background:var(--bg-2); font-family:var(--mono);
+  }
+  .chip.active{border-color:var(--orange); color:var(--orange); background:var(--orange-dim);}
+
+  .output{
+    margin-top:18px; background:var(--bg-0); border:1px solid var(--line); border-radius:10px;
+    padding:18px; white-space:pre-wrap; font-size:14px; line-height:1.75; min-height:80px; color:var(--text-0);
+  }
+  .output.empty{color:var(--text-2); font-family:var(--mono); font-size:12px; white-space:normal;}
+  .outbar{display:flex; justify-content:flex-end; gap:8px; margin-top:10px;}
+  .copybtn{
+    background:none; border:1px solid var(--line); color:var(--text-1); border-radius:6px;
+    padding:8px 14px; cursor:pointer; font-size:12px; font-family:var(--mono);
+  }
+  .copybtn:hover{border-color:var(--gold); color:var(--gold);}
+  .err{color:var(--danger); font-size:12px; margin-top:8px; font-family:var(--mono);}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div>
+      <div class="eyebrow">Mission · <input type="text" id="missionText" placeholder="請輸入本次任務名稱" value=""></div>
+      <h1>投廣任務<span>控制台</span></h1>
+      <div class="subtitle">預算排期表 + 文案產生器 — 一次搞定貼文投廣規劃與撰稿</div>
+    </div>
+    <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+      <div class="badge datebadge">
+        <span>開賣日</span>
+        <input type="date" id="launchDate" value="">
+        <span class="weekday" id="launchWeekday" style="margin-top:0;"></span>
+      </div>
+    </div>
+  </header>
+
+  <div class="projecttabs-wrap">
+    <div class="projecttabs" id="projectTabs"></div>
+    <div class="projecttabs-actions">
+      <button type="button" class="icsbtn" id="exportProjectBtn">⬇ 匯出這個專案</button>
+      <button type="button" class="icsbtn" id="importProjectBtn">⬆ 匯入專案</button>
+      <input type="file" id="importProjectFile" accept="application/json" style="display:none;">
+    </div>
+  </div>
+
+  <div class="tape"></div>
+
+  <!-- 預算總覽 -->
+  <section class="panel">
+    <h2>預算總覽</h2>
+    <div class="overview">
+      <div class="stat">
+        <label>總預算 (NT$)</label>
+        <input type="number" id="totalBudget" value="40000">
+      </div>
+      <div class="stat">
+        <label>已分配</label>
+        <div class="val" id="statUsed">$0</div>
+      </div>
+      <div class="stat remain">
+        <label>剩餘</label>
+        <div class="val" id="statRemain">$0</div>
+      </div>
+      <div class="stat">
+        <label>貼文數</label>
+        <div class="val" id="statCount">0</div>
+      </div>
+    </div>
+    <div class="barwrap"><div class="bar" id="bar"></div></div>
+  </section>
+
+  <!-- 排期表 -->
+  <section class="panel">
+    <h2>貼文投廣排期</h2>
+    <table>
+      <thead>
+        <tr>
+          <th style="width:3%"></th>
+          <th style="width:15%">貼文名稱</th>
+          <th style="width:9%">優化目的</th>
+          <th style="width:11%">開始日期</th>
+          <th style="width:11%">結束日期</th>
+          <th style="width:5%">天數</th>
+          <th style="width:9%">日預算</th>
+          <th style="width:9%">小計</th>
+          <th style="width:23%">文案重點（選填）</th>
+          <th style="width:5%"></th>
+        </tr>
+      </thead>
+      <tbody id="tbody"></tbody>
+    </table>
+    <button class="addrow" id="addRow">＋ 新增一篇貼文</button>
+  </section>
+
+  <div class="tape"></div>
+
+  <!-- 文案產生器 -->
+  <section class="panel">
+    <h2>文案產生器</h2>
+
+    <div class="genrow">
+      <div>
+        <label class="field-label">賣場連結</label>
+        <input type="text" id="storeLink" placeholder="https://shopbecometrue.tw/xxxxx">
+        <div class="checkrow">
+          <input type="checkbox" id="useRealLink">
+          <label for="useRealLink">文案中直接帶入真實連結（預設用 (LINK) 佔位）</label>
+        </div>
+      </div>
+      <div>
+        <label class="field-label">商品賣點 / 補充說明（所有貼文共用背景資訊）</label>
+        <textarea id="globalBrief" rows="2" placeholder="請填入商品名稱、品牌、賣點、活動期間等，會作為所有貼文文案的共用背景資訊"></textarea>
+      </div>
+    </div>
+
+    <label class="field-label">選擇要產文案的貼文</label>
+    <div class="postpicker" id="postPicker"></div>
+
+    <button class="genbtn" id="genBtn">✎ 產出文案</button>
+    <div class="err" id="genErr" style="display:none;"></div>
+
+    <div class="output empty" id="output">選好貼文後按下「產出文案」，結果會顯示在這裡。</div>
+    <div class="outbar">
+      <button class="copybtn" id="copyBtn">複製文案</button>
+    </div>
+  </section>
+
+</div>
+
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal-box">
+    <div class="modal-msg" id="modalMsg"></div>
+    <input type="text" id="modalInput" style="display:none;">
+    <div class="modal-actions">
+      <button type="button" class="rowbtn" id="modalCancel">取消</button>
+      <button type="button" class="genbtn" id="modalOk" style="margin-top:0;">確定</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const DEFAULT_ROWS = [
+  {id:1, name:"廣告貼文", goal:"銷售", start:"2026-08-14", end:"2026-08-20", daily:1000, brief:""},
+  {id:2, name:"廣告貼文", goal:"銷售", start:"2026-08-21", end:"2026-09-15", daily:700, brief:""},
+  {id:3, name:"前台貼文-留言活動", goal:"曝光", start:"2026-08-11", end:"2026-08-15", daily:400, brief:""},
+  {id:4, name:"前台貼文-留言活動", goal:"互動", start:"2026-08-11", end:"2026-08-15", daily:400, brief:""},
+  {id:5, name:"前台貼文-開賣", goal:"曝光", start:"2026-08-14", end:"2026-08-20", daily:600, brief:""},
+  {id:6, name:"前台貼文-夜光", goal:"曝光", start:"2026-08-17", end:"2026-08-21", daily:400, brief:""},
+  {id:7, name:"前台貼文-造型", goal:"互動", start:"2026-08-21", end:"2026-08-25", daily:400, brief:""},
+  {id:8, name:"前台貼文-倒數", goal:"曝光", start:"2026-08-27", end:"2026-08-31", daily:360, brief:""},
+];
+
+let rows = [];
+let nextId = 1;
+let selectedPostId = null;
+
+let projects = [];
+let activeProjectId = null;
+let nextProjectId = 1;
+const STORAGE_KEY = 'adBudgetTool_projects_v1';
+
+const tbody = document.getElementById('tbody');
+const totalBudgetInput = document.getElementById('totalBudget');
+
+function days(start,end){
+  if(!start||!end) return 0;
+  const s = new Date(start), e = new Date(end);
+  const d = Math.round((e-s)/(1000*60*60*24))+1;
+  return d>0?d:0;
+}
+function fmt(n){ return 'NT$' + Math.round(n).toLocaleString(); }
+function weekdayLabel(dateStr){
+  if(!dateStr) return '';
+  const names = ['週日','週一','週二','週三','週四','週五','週六'];
+  const dt = new Date(dateStr + 'T00:00:00');
+  if(isNaN(dt.getTime())) return '';
+  return names[dt.getDay()];
+}
+
+function goalClass(g){
+  if(g==='銷售') return 'goal-sale';
+  if(g==='互動') return 'goal-eng';
+  if(g==='導流') return 'goal-traffic';
+  if(g==='觀看') return 'goal-watch';
+  return '';
+}
+
+function render(){
+  tbody.innerHTML = '';
+  rows.forEach((r,idx)=>{
+    const d = days(r.start,r.end);
+    if(r.subtotal===undefined || r.subtotal===null){
+      r.subtotal = Math.round(d * (r.daily||0));
+    }
+    const tr = document.createElement('tr');
+    tr.draggable = true;
+    tr.dataset.index = idx;
+    tr.innerHTML = `
+      <td class="draghandle" title="拖曳調整順序">⠿</td>
+      <td><input type="text" data-f="name" value="${escapeHtml(r.name)}"></td>
+      <td>
+        <select data-f="goal" class="${goalClass(r.goal)}">
+          <option ${r.goal==='曝光'?'selected':''}>曝光</option>
+          <option ${r.goal==='互動'?'selected':''}>互動</option>
+          <option ${r.goal==='導流'?'selected':''}>導流</option>
+          <option ${r.goal==='銷售'?'selected':''}>銷售</option>
+          <option ${r.goal==='觀看'?'selected':''}>觀看</option>
+        </select>
+      </td>
+      <td>
+        <input type="date" data-f="start" value="${r.start}">
+        <div class="datecell-foot">
+          <span class="weekday" data-w="start" style="margin-top:0;">${weekdayLabel(r.start)}</span>
+          <button type="button" class="icsbtn-row" data-ics title="加入行事曆">📅</button>
+        </div>
+      </td>
+      <td><input type="date" data-f="end" value="${r.end}"><div class="weekday" data-w="end">${weekdayLabel(r.end)}</div></td>
+      <td><div class="readonly">${d}天</div></td>
+      <td><input type="number" data-f="daily" value="${r.daily}"></td>
+      <td><input type="number" data-f="subtotal" value="${r.subtotal}"></td>
+      <td><textarea data-f="brief" rows="1" placeholder="例：夜光效果賣點">${escapeHtml(r.brief||'')}</textarea></td>
+      <td><button class="rowbtn" data-del>刪除</button></td>
+    `;
+
+    const dayCell = tr.querySelector('.readonly');
+    const dailyInput = tr.querySelector('[data-f="daily"]');
+    const subtotalInput = tr.querySelector('[data-f="subtotal"]');
+    const goalSelect = tr.querySelector('[data-f="goal"]');
+    const nameInput = tr.querySelector('[data-f="name"]');
+    const startInput = tr.querySelector('[data-f="start"]');
+    const endInput = tr.querySelector('[data-f="end"]');
+    const briefInput = tr.querySelector('[data-f="brief"]');
+    const startWeekday = tr.querySelector('[data-w="start"]');
+    const endWeekday = tr.querySelector('[data-w="end"]');
+    const icsBtn = tr.querySelector('[data-ics]');
+
+    icsBtn.addEventListener('click', ()=>{
+      if(!r.start){
+        customAlert('請先填入開始日期，才能加入行事曆');
+        return;
+      }
+      downloadIcs(r.start, r.name || '貼文開始');
+    });
+
+    function recomputeFromDate(){
+      const dd = days(r.start,r.end);
+      dayCell.textContent = dd + '天';
+      r.subtotal = Math.round(dd * (r.daily||0));
+      subtotalInput.value = r.subtotal;
+      startWeekday.textContent = weekdayLabel(r.start);
+      endWeekday.textContent = weekdayLabel(r.end);
+      renderSummary();
+    }
+
+    nameInput.addEventListener('input', ()=>{
+      r.name = nameInput.value;
+      renderPicker();
+    });
+    goalSelect.addEventListener('change', ()=>{
+      r.goal = goalSelect.value;
+      goalSelect.className = goalClass(r.goal);
+    });
+    startInput.addEventListener('input', ()=>{ r.start = startInput.value; recomputeFromDate(); });
+    endInput.addEventListener('input', ()=>{ r.end = endInput.value; recomputeFromDate(); });
+    briefInput.addEventListener('input', ()=>{ r.brief = briefInput.value; });
+
+    // 日預算 / 小計 互算：改其中一個，另一個自動帶入
+    dailyInput.addEventListener('input', ()=>{
+      r.daily = parseFloat(dailyInput.value||0);
+      const dd = days(r.start,r.end);
+      r.subtotal = Math.round(dd * r.daily);
+      subtotalInput.value = r.subtotal;
+      renderSummary();
+    });
+    subtotalInput.addEventListener('input', ()=>{
+      r.subtotal = parseFloat(subtotalInput.value||0);
+      const dd = days(r.start,r.end);
+      r.daily = dd>0 ? Math.round(r.subtotal/dd) : 0;
+      dailyInput.value = r.daily;
+      renderSummary();
+    });
+
+    tr.querySelector('[data-del]').addEventListener('click', ()=>{
+      if(r.id===selectedPostId) selectedPostId = null;
+      rows = rows.filter(x=>x.id!==r.id);
+      render();
+    });
+
+    // 拖曳排序（只允許從拖曳把手 ⠿ 開始，避免影響輸入框內的文字選取/操作）
+    let dragAllowed = false;
+    tr.addEventListener('mousedown', (e)=>{
+      dragAllowed = !!e.target.closest('.draghandle');
+    });
+    tr.addEventListener('dragstart', (e)=>{
+      if(!dragAllowed){ e.preventDefault(); return; }
+      tr.classList.add('dragging');
+      tr.dataset.dragging = 'true';
+    });
+    tr.addEventListener('dragend', ()=>{
+      tr.classList.remove('dragging');
+      tbody.querySelectorAll('tr').forEach(t=>t.classList.remove('drag-over'));
+    });
+    tr.addEventListener('dragover', (e)=>{
+      e.preventDefault();
+      tr.classList.add('drag-over');
+    });
+    tr.addEventListener('dragleave', ()=>{
+      tr.classList.remove('drag-over');
+    });
+    tr.addEventListener('drop', (e)=>{
+      e.preventDefault();
+      tr.classList.remove('drag-over');
+      const fromIdx = parseInt(tbody.querySelector('tr.dragging')?.dataset.index, 10);
+      const toIdx = parseInt(tr.dataset.index, 10);
+      if(isNaN(fromIdx) || isNaN(toIdx) || fromIdx===toIdx) return;
+      const [moved] = rows.splice(fromIdx,1);
+      rows.splice(toIdx,0,moved);
+      render();
+    });
+
+    tbody.appendChild(tr);
+  });
+  renderSummary();
+  renderPicker();
+}
+
+function renderSummary(){
+  const total = parseFloat(totalBudgetInput.value||0);
+  const used = rows.reduce((sum,r)=> sum + (r.subtotal||0), 0);
+  const remain = total - used;
+  document.getElementById('statUsed').textContent = fmt(used);
+  const remainEl = document.getElementById('statRemain');
+  remainEl.textContent = fmt(remain);
+  remainEl.className = 'val ' + (remain<0 ? 'neg':'ok');
+  document.getElementById('statCount').textContent = rows.length;
+  const pct = total>0 ? Math.min(100, (used/total)*100) : 0;
+  document.getElementById('bar').style.width = pct+'%';
+  persistCurrentProject();
+}
+
+function renderPicker(){
+  const picker = document.getElementById('postPicker');
+  picker.innerHTML = '';
+  rows.forEach(r=>{
+    const chip = document.createElement('div');
+    chip.className = 'chip' + (r.id===selectedPostId ? ' active':'');
+    chip.textContent = r.name || '(未命名貼文)';
+    chip.addEventListener('click', ()=>{
+      selectedPostId = r.id;
+      renderPicker();
+    });
+    picker.appendChild(chip);
+  });
+}
+
+function escapeHtml(s){
+  return (s||'').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+/* ---------------- 自訂對話框（取代 confirm/alert/prompt，避免在部分嵌入環境被瀏覽器封鎖不顯示） ---------------- */
+function showModal({message, withInput=false, defaultValue='', hideCancel=false}){
+  return new Promise(resolve=>{
+    const overlay = document.getElementById('modalOverlay');
+    const msgEl = document.getElementById('modalMsg');
+    const inputEl = document.getElementById('modalInput');
+    const okBtn = document.getElementById('modalOk');
+    const cancelBtn = document.getElementById('modalCancel');
+
+    msgEl.textContent = message;
+    inputEl.style.display = withInput ? 'block' : 'none';
+    inputEl.value = defaultValue;
+    cancelBtn.style.display = hideCancel ? 'none' : 'inline-block';
+    overlay.style.display = 'flex';
+    if(withInput){ setTimeout(()=>{ inputEl.focus(); inputEl.select(); }, 0); }
+
+    function cleanup(result){
+      overlay.style.display = 'none';
+      okBtn.removeEventListener('click', onOk);
+      cancelBtn.removeEventListener('click', onCancel);
+      inputEl.removeEventListener('keydown', onKey);
+      resolve(result);
+    }
+    function onOk(){ cleanup(withInput ? inputEl.value : true); }
+    function onCancel(){ cleanup(withInput ? null : false); }
+    function onKey(e){
+      if(e.key==='Enter'){ e.preventDefault(); onOk(); }
+      if(e.key==='Escape'){ e.preventDefault(); onCancel(); }
+    }
+    okBtn.addEventListener('click', onOk);
+    cancelBtn.addEventListener('click', onCancel);
+    inputEl.addEventListener('keydown', onKey);
+  });
+}
+function customAlert(message){ return showModal({message, hideCancel:true}); }
+function customConfirm(message){ return showModal({message}); }
+function customPrompt(message, defaultValue){ return showModal({message, withInput:true, defaultValue}); }
+
+document.getElementById('addRow').addEventListener('click', ()=>{
+  rows.push({id:nextId++, name:'新貼文', goal:'曝光', start:'2026-08-14', end:'2026-08-18', daily:400, subtotal: days('2026-08-14','2026-08-18')*400, brief:''});
+  render();
+});
+totalBudgetInput.addEventListener('input', renderSummary);
+
+/* ---------------- 開賣日：星期顯示 ---------------- */
+const launchDateInput = document.getElementById('launchDate');
+const launchWeekdayEl = document.getElementById('launchWeekday');
+function updateLaunchWeekday(){
+  const w = weekdayLabel(launchDateInput.value);
+  launchWeekdayEl.textContent = w ? `（${w}）` : '';
+}
+launchDateInput.addEventListener('input', ()=>{ updateLaunchWeekday(); persistCurrentProject(); });
+
+/* ---------------- 其他跟專案綁定的欄位：變更時一併存檔 ---------------- */
+['missionText','storeLink','globalBrief'].forEach(id=>{
+  document.getElementById(id).addEventListener('input', persistCurrentProject);
+});
+document.getElementById('useRealLink').addEventListener('change', persistCurrentProject);
+
+/* ================= 多專案切換 ================= */
+
+function collectStateFromUI(){
+  return {
+    rows: JSON.parse(JSON.stringify(rows)),
+    totalBudget: parseFloat(totalBudgetInput.value||0),
+    missionText: document.getElementById('missionText').value,
+    launchDate: launchDateInput.value,
+    storeLink: document.getElementById('storeLink').value,
+    useRealLink: document.getElementById('useRealLink').checked,
+    globalBrief: document.getElementById('globalBrief').value
+  };
+}
+
+function applyStateToUI(data){
+  data = data || {};
+  rows = JSON.parse(JSON.stringify(data.rows || []));
+  nextId = rows.reduce((m,r)=> Math.max(m, r.id||0), 0) + 1;
+  selectedPostId = null;
+  totalBudgetInput.value = (data.totalBudget !== undefined) ? data.totalBudget : 0;
+  document.getElementById('missionText').value = data.missionText || '';
+  launchDateInput.value = data.launchDate || '';
+  document.getElementById('storeLink').value = data.storeLink || '';
+  document.getElementById('useRealLink').checked = !!data.useRealLink;
+  document.getElementById('globalBrief').value = data.globalBrief || '';
+  updateLaunchWeekday();
+  render();
+}
+
+function getActiveProject(){
+  return projects.find(p=>p.id===activeProjectId);
+}
+
+function persistCurrentProject(){
+  const p = getActiveProject();
+  if(!p) return;
+  p.data = collectStateFromUI();
+  saveProjects();
+}
+
+function saveProjects(){
+  try{
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({projects, activeProjectId, nextProjectId}));
+  }catch(e){ /* 儲存失敗（例如無痕模式）時安靜略過，不影響操作 */ }
+}
+
+function loadProjects(){
+  try{
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if(!raw) return null;
+    const parsed = JSON.parse(raw);
+    if(!parsed || !Array.isArray(parsed.projects) || parsed.projects.length===0) return null;
+    return parsed;
+  }catch(e){ return null; }
+}
+
+function switchProject(id){
+  if(id===activeProjectId) return;
+  persistCurrentProject();
+  activeProjectId = id;
+  applyStateToUI(getActiveProject().data);
+  saveProjects();
+  renderTabs();
+}
+
+function addProject(){
+  persistCurrentProject();
+  const id = nextProjectId++;
+  const name = `新專案 ${id}`;
+  const data = {rows:[], totalBudget:0, missionText:'', launchDate:'', storeLink:'', useRealLink:false, globalBrief:''};
+  projects.push({id, name, data});
+  activeProjectId = id;
+  applyStateToUI(data);
+  saveProjects();
+  renderTabs();
+}
+
+function renderTabs(){
+  const tabBar = document.getElementById('projectTabs');
+  tabBar.innerHTML = '';
+  projects.forEach(p=>{
+    const tab = document.createElement('div');
+    tab.className = 'ptab' + (p.id===activeProjectId ? ' active' : '');
+    tab.innerHTML = `
+      <span class="ptab-name">${escapeHtml(p.name)}</span>
+      <button type="button" class="ptab-icon" data-rename title="重新命名">✎</button>
+      <button type="button" class="ptab-icon" data-del title="刪除專案">×</button>
+    `;
+    tab.querySelector('.ptab-name').addEventListener('click', ()=> switchProject(p.id));
+    tab.querySelector('[data-rename]').addEventListener('click', async (e)=>{
+      e.stopPropagation();
+      const nm = await customPrompt('專案名稱', p.name);
+      if(nm && nm.trim()){ p.name = nm.trim(); saveProjects(); renderTabs(); }
+    });
+    tab.querySelector('[data-del]').addEventListener('click', async (e)=>{
+      e.stopPropagation();
+      if(projects.length<=1){ await customAlert('至少要保留一個專案'); return; }
+      const ok = await customConfirm(`確定要刪除「${p.name}」嗎？此動作無法復原。`);
+      if(!ok) return;
+      const wasActive = p.id===activeProjectId;
+      projects = projects.filter(x=>x.id!==p.id);
+      if(wasActive){
+        activeProjectId = projects[0].id;
+        applyStateToUI(projects[0].data);
+      }
+      saveProjects();
+      renderTabs();
+    });
+    tabBar.appendChild(tab);
+  });
+
+  const addBtn = document.createElement('button');
+  addBtn.type = 'button';
+  addBtn.className = 'ptab-add';
+  addBtn.textContent = '＋ 新增專案';
+  addBtn.addEventListener('click', addProject);
+  tabBar.appendChild(addBtn);
+}
+
+function exportCurrentProject(){
+  persistCurrentProject();
+  const p = getActiveProject();
+  const payload = {name: p.name, data: p.data, exportedAt: new Date().toISOString()};
+  const blob = new Blob([JSON.stringify(payload, null, 2)], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `${p.name}.json`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+function importProjectFile(file){
+  const reader = new FileReader();
+  reader.onload = ()=>{
+    try{
+      const parsed = JSON.parse(reader.result);
+      if(!parsed || !parsed.data) throw new Error('格式不正確');
+      persistCurrentProject();
+      const id = nextProjectId++;
+      const baseName = parsed.name || '匯入的專案';
+      const existingNames = projects.map(p=>p.name);
+      let finalName = baseName, n = 2;
+      while(existingNames.includes(finalName)){ finalName = `${baseName} (${n++})`; }
+      projects.push({id, name: finalName, data: parsed.data});
+      activeProjectId = id;
+      applyStateToUI(parsed.data);
+      saveProjects();
+      renderTabs();
+    }catch(e){
+      customAlert('匯入失敗：檔案格式不正確');
+    }
+  };
+  reader.readAsText(file);
+}
+
+document.getElementById('exportProjectBtn').addEventListener('click', exportCurrentProject);
+document.getElementById('importProjectBtn').addEventListener('click', ()=>{
+  document.getElementById('importProjectFile').click();
+});
+document.getElementById('importProjectFile').addEventListener('change', (e)=>{
+  const file = e.target.files[0];
+  if(file) importProjectFile(file);
+  e.target.value = '';
+});
+
+/* ---------------- 初始化：讀取瀏覽器已儲存的專案，或建立預設專案 ---------------- */
+(function initProjects(){
+  const saved = loadProjects();
+  if(saved){
+    projects = saved.projects;
+    nextProjectId = saved.nextProjectId || (Math.max(...projects.map(p=>p.id), 0) + 1);
+    activeProjectId = projects.find(p=>p.id===saved.activeProjectId) ? saved.activeProjectId : projects[0].id;
+  }else{
+    projects = [{
+      id: 1,
+      name: '專案 1',
+      data: {
+        rows: JSON.parse(JSON.stringify(DEFAULT_ROWS)),
+        totalBudget: 40000,
+        missionText: '',
+        launchDate: '',
+        storeLink: '',
+        useRealLink: false,
+        globalBrief: ''
+      }
+    }];
+    nextProjectId = 2;
+    activeProjectId = 1;
+  }
+  applyStateToUI(getActiveProject().data);
+  renderTabs();
+  saveProjects();
+})();
+
+function downloadIcs(dateVal, titleText){
+  const title = (titleText || '貼文提醒').trim();
+  const ymd = dateVal.replace(/-/g,'');
+  // 隔天日期（.ics 全天事件的結束日需為次日）
+  const startDt = new Date(dateVal + 'T00:00:00');
+  const endDt = new Date(startDt);
+  endDt.setDate(endDt.getDate()+1);
+  const pad = n => String(n).padStart(2,'0');
+  const ymdEnd = `${endDt.getFullYear()}${pad(endDt.getMonth()+1)}${pad(endDt.getDate())}`;
+
+  const ics = [
+    'BEGIN:VCALENDAR',
+    'VERSION:2.0',
+    'PRODID:-//AdBudgetTool//TW',
+    'BEGIN:VEVENT',
+    `UID:${Date.now()}-${Math.random().toString(36).slice(2)}@adbudgettool`,
+    `DTSTAMP:${ymd}T000000Z`,
+    `DTSTART:${ymd}`,
+    `DTEND:${ymdEnd}`,
+    `SUMMARY:${title}`,
+    'DESCRIPTION:由投廣任務控制台建立的貼文投廣提醒',
+    'END:VEVENT',
+    'END:VCALENDAR'
+  ].join('\r\n');
+
+  const blob = new Blob([ics], {type:'text/calendar;charset=utf-8'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `${title}.ics`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+/* ---------------- 文案產生器 ---------------- */
+
+const REFERENCE_STYLE = `🎉【品牌名 商品系列】強勢登場🎉
+手刀搶先看>>(LINK)
+
+超人氣新品正式亮相啦🛍️
+把最受期待的亮點濃縮在這一篇貼文裡，讓大家一看就懂、一看就想點進去！
+
+限定優惠資訊（手速要快！）🏃💨
+* 活動期間： 依實際檔期調整
+* 加碼好禮： 前若干名訂單，加碼贈送限定小禮
+* 內建驚喜： 附加配件或聯名彩蛋，增加開箱期待感
+
+一起熱鬧開跑，趕緊手刀下單吧！`;
+
+document.getElementById('genBtn').addEventListener('click', generateCopy);
+
+async function generateCopy(){
+  const errEl = document.getElementById('genErr');
+  const outEl = document.getElementById('output');
+  errEl.style.display = 'none';
+
+  const post = rows.find(r=>r.id===selectedPostId);
+  if(!post){
+    errEl.textContent = '請先選擇一篇要產文案的貼文';
+    errEl.style.display = 'block';
+    return;
+  }
+
+  const btn = document.getElementById('genBtn');
+  btn.disabled = true;
+  btn.textContent = '產出中...';
+  outEl.classList.add('empty');
+  outEl.textContent = '生成中，請稍候...';
+
+  const globalBrief = document.getElementById('globalBrief').value.trim();
+
+  const prompt = `你是專業社群小編，請根據以下資訊撰寫一則繁體中文的社群貼文文案（Facebook/Instagram/Threads 共用）。
+
+【參考風格】（語氣、格式、emoji使用方式請參考，但內容不要照抄）
+${REFERENCE_STYLE}
+
+【商品背景資訊】
+${globalBrief}
+
+【本篇貼文資訊】
+貼文名稱：${post.name}
+優化目的：${post.goal}
+投放期間：${post.start} ~ ${post.end}
+文案重點／補充：${post.brief || '（無特別補充，請依貼文名稱與優化目的自行發想合適內容）'}
+
+【撰寫規則】
+1. 文案的前三行內必須放入連結，連結請用「(LINK)」這個文字表示，不要寫出真實網址。
+2. 絕對不要提到「預購」、「預購期間」等字眼。
+3. 語氣活潑、口語，適度使用emoji，但不要過度堆疊。
+4. 依照「優化目的」調整重點：銷售要有明確導購與行動呼籲；曝光著重吸睛與話題性；互動要設計明確的留言/互動引導；導流要強化連結點擊的動機與急迫感；觀看要營造好奇心與繼續看下去的理由。
+5. 文末請根據上方「賣場連結」與「商品背景資訊」判斷這是哪個品牌／賣場、什麼樣的商品類型，自行生成切合主題的hashtag（例如品牌名、系列名、商品類型、相關關鍵字），數量不超過10個；不要套用任何與此次資訊無關的固定hashtag。
+6. 只輸出文案本身，不要加任何說明、標題或前後贅語。`;
+
+  try{
+    const response = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: "claude-sonnet-4-6",
+        max_tokens: 1000,
+        messages: [{ role: "user", content: prompt }]
+      })
+    });
+    const data = await response.json();
+    let text = (data.content || [])
+      .map(item => item.type === 'text' ? item.text : '')
+      .filter(Boolean)
+      .join('\n')
+      .trim();
+
+    if(!text){ throw new Error('沒有收到文案內容，請再試一次'); }
+
+    const link = document.getElementById('storeLink').value.trim();
+    const useReal = document.getElementById('useRealLink').checked;
+    if(useReal && link){
+      text = text.split('(LINK)').join(link);
+    }
+
+    outEl.classList.remove('empty');
+    outEl.textContent = text;
+  }catch(err){
+    let msg = err.message;
+    if(msg === 'Failed to fetch'){
+      msg = '無法連線到文案生成服務。這個功能需要在 claude.ai 的 Artifact 環境中執行才能運作（它會自動代理 API 請求）；若把此檔案下載後直接用瀏覽器開啟，或放到自己的網站上，就會因為瀏覽器安全限制（CORS）與缺少 API 金鑰而失敗。';
+    }
+    errEl.textContent = '產生文案時發生錯誤：' + msg;
+    errEl.style.display = 'block';
+    outEl.classList.add('empty');
+    outEl.textContent = '產生失敗，請調整內容後再試一次。';
+  }finally{
+    btn.disabled = false;
+    btn.textContent = '✎ 產出文案';
+  }
+}
+
+document.getElementById('copyBtn').addEventListener('click', ()=>{
+  const text = document.getElementById('output').textContent;
+  const b = document.getElementById('copyBtn');
+  const old = b.textContent;
+  const showSuccess = ()=>{ b.textContent = '已複製 ✓'; setTimeout(()=>{ b.textContent = old; }, 1500); };
+  const showFail = ()=>{ b.textContent = '複製失敗，請手動選取'; setTimeout(()=>{ b.textContent = old; }, 2000); };
+
+  function fallbackCopy(){
+    try{
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      ta.style.position = 'fixed';
+      ta.style.left = '-9999px';
+      document.body.appendChild(ta);
+      ta.focus();
+      ta.select();
+      const ok = document.execCommand('copy');
+      document.body.removeChild(ta);
+      if(ok) showSuccess(); else showFail();
+    }catch(e){
+      showFail();
+    }
+  }
+
+  if(!text || text.trim()===''){
+    showFail();
+    return;
+  }
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(text).then(showSuccess).catch(fallbackCopy);
+  }else{
+    fallbackCopy();
+  }
+});
+</script>
+</body>
+</html>
