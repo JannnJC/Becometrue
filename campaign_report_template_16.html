@@ -1,0 +1,1674 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>成效報表</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+<style>
+  :root{
+    --bg-page:#f4f5f9; --bg-panel:#ffffff; --bg-soft:#eef0f5; --line:#e3e6ee;
+    --text-0:#272b35; --text-1:#5a6272; --text-2:#9399a8;
+    --accent:#7590c4; --accent-soft:#7590c414; --accent-line:#7590c440;
+    --danger:#d18a97; --teal-ok:#7fae9a; --sans:'Inter',-apple-system,"PingFang TC","Noto Sans TC",sans-serif;
+    --display:'Sora', var(--sans); --mono:'JetBrains Mono',Consolas,monospace; --radius:14px;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0; background:var(--bg-page); color:var(--text-0); font-family:var(--sans); min-height:100vh;}
+  .wrap{max-width:1180px; margin:0 auto; padding:0 20px 60px;}
+
+  .topbar{
+    display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:14px;
+    padding:20px 20px; background:var(--bg-panel); border-bottom:1px solid var(--line);
+    position:sticky; top:0; z-index:20;
+  }
+  .brand{display:flex; align-items:center; gap:12px;}
+  .brand-mark{
+    width:36px; height:36px; border-radius:10px; background:linear-gradient(135deg, var(--accent), #8FB8D9);
+    display:flex; align-items:center; justify-content:center; color:#fff; font-family:var(--display);
+    font-weight:800; font-size:15px; flex:none;
+  }
+  .brand-text h1{font-family:var(--display); font-size:17px; font-weight:700; margin:0;}
+  .brand-text .sub{font-size:12px; color:var(--text-2); margin-top:1px; font-family:var(--mono);}
+  .backlink{font-size:13px; color:var(--accent); text-decoration:none; font-weight:500;}
+  .backlink:hover{text-decoration:underline;}
+
+  .projecttabs{display:flex; gap:6px; flex-wrap:wrap; padding:12px 20px; background:var(--bg-panel); border-bottom:1px solid var(--line);}
+  .ptab{padding:7px 13px; border-radius:8px; font-size:12.5px; font-weight:500; color:var(--text-1); cursor:pointer; border:1px solid transparent; display:flex; align-items:center; gap:6px;}
+  .ptab:hover{background:var(--bg-soft);}
+  .ptab.active{background:var(--accent-soft); color:var(--accent); border-color:var(--accent-line);}
+  .ptab.disabled{color:var(--text-2); cursor:not-allowed; opacity:.55;}
+  .ptab.dragging{opacity:.4;}
+  .ptab.drag-over{border-color:var(--accent);}
+  .ptab-drag{cursor:grab; color:var(--text-2); font-size:13px;}
+  .ptab-drag:hover{color:var(--accent);}
+  .ptab-label{cursor:pointer;}
+
+  .controlsbar{
+    display:flex; align-items:center; gap:10px; flex-wrap:wrap; padding:14px 20px;
+    background:var(--bg-panel); border-bottom:1px solid var(--line);
+  }
+  .presetgroup{display:flex; gap:4px; background:var(--bg-soft); border-radius:9px; padding:3px;}
+  .presetbtn{
+    border:none; background:transparent; padding:6px 11px; border-radius:7px; font-size:12.5px;
+    color:var(--text-1); cursor:pointer; font-family:var(--sans); font-weight:500;
+  }
+  .presetbtn.active{background:var(--bg-panel); color:var(--accent); box-shadow:0 1px 2px #0001;}
+  .dateinputs{display:flex; align-items:center; gap:6px; font-size:12.5px; color:var(--text-2);}
+  .dateinputs input{
+    border:1px solid var(--line); border-radius:7px; padding:5px 8px; font-family:var(--mono); font-size:12.5px;
+    color:var(--text-0);
+  }
+  .detailtoolbar{padding:12px 20px; display:flex; justify-content:flex-end;}
+  .postfilter{display:flex; align-items:center; gap:6px; font-size:12.5px; color:var(--text-2);}
+  .postfilter select{
+    border:1px solid var(--line); border-radius:7px; padding:5px 8px; font-size:12.5px;
+    color:var(--text-0); font-family:var(--sans); max-width:260px;
+  }
+  .refreshbtn{
+    background:var(--accent); color:#fff; border:none; border-radius:9px; padding:8px 16px;
+    font-size:13px; font-weight:500; cursor:pointer; font-family:var(--sans);
+  }
+  .refreshbtn:hover{filter:brightness(1.08);}
+  .refreshbtn:disabled{opacity:.6; cursor:wait;}
+  .updated{font-size:11.5px; color:var(--text-2); font-family:var(--mono); margin-left:auto;}
+
+  .viewtabs{display:flex; gap:6px; flex-wrap:wrap; padding:16px 20px 0;}
+  .vtab{
+    padding:9px 16px; border-radius:9px 9px 0 0; font-size:13px; font-weight:500; color:var(--text-1);
+    cursor:pointer; border:1px solid var(--line); border-bottom:none; background:var(--bg-soft);
+  }
+  .vtab.active{background:var(--bg-panel); color:var(--accent); border-color:var(--line);}
+
+  .panel{background:var(--bg-panel); border:1px solid var(--line); border-radius:0 0 var(--radius) var(--radius); padding:0; margin-bottom:22px; overflow:hidden;}
+
+  .stats-strip{display:grid; grid-template-columns:repeat(auto-fit,minmax(130px,1fr)); gap:1px; background:var(--line); border-bottom:1px solid var(--line);}
+  .stat-mini{background:var(--bg-panel); padding:14px 16px;}
+  .stat-mini label{display:block; font-size:11px; color:var(--text-2); margin-bottom:4px;}
+  .stat-mini .v{font-family:var(--mono); font-size:16px; font-weight:600;}
+
+  .chartwrap{padding:18px 20px; border-bottom:1px solid var(--line);}
+  .chartgrid{display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); gap:16px;}
+  .chartcard{background:var(--bg-soft); border-radius:10px; padding:14px; height:260px; display:flex; flex-direction:column;}
+  .chartcard h4{margin:0 0 8px; font-size:12px; color:var(--text-1); font-weight:600;}
+  .chartcard .canvaswrap{flex:1; position:relative; min-height:0;}
+  .chartcard .nodata{display:flex; align-items:center; justify-content:center; height:100%; color:var(--text-2); font-size:12px;}
+  .overview-note{
+    background:var(--bg-soft); border-radius:10px; padding:14px 16px; font-size:12.5px; color:var(--text-1);
+    line-height:1.7; margin-top:16px;
+  }
+  .overview-note b{color:var(--text-0);}
+
+  .overview-region{padding:18px 20px 22px; background:var(--bg-panel); border-bottom:1px solid var(--line);}
+  .overview-stats{display:grid; grid-template-columns:repeat(auto-fit,minmax(130px,1fr)); gap:12px; margin-bottom:16px;}
+  .overview-stat{background:var(--bg-soft); border-radius:10px; padding:14px 16px;}
+  .overview-stat label{display:block; font-size:11.5px; color:var(--text-2); margin-bottom:6px;}
+  .overview-stat .v{font-family:var(--mono); font-size:19px; font-weight:600;}
+  .overview-stat .delta{font-size:11px; margin-top:5px; font-family:var(--mono);}
+  .overview-stat .delta.up{color:var(--teal-ok, #0f8f74);}
+  .overview-stat .delta.down{color:var(--danger);}
+  .overview-charts-row{display:grid; grid-template-columns:2fr 1fr; gap:16px;}
+  @media (max-width:720px){ .overview-charts-row{grid-template-columns:1fr;} }
+
+  table{width:100%; border-collapse:collapse; font-size:13px;}
+  thead th{
+    text-align:right; font-size:11px; color:var(--text-2); text-transform:uppercase; letter-spacing:.03em;
+    padding:12px 14px; border-bottom:1px solid var(--line); font-weight:600; white-space:nowrap; background:var(--bg-soft);
+  }
+  thead th:first-child, tbody td:first-child{text-align:left;}
+  .info-icon{
+    display:inline-block; margin-left:4px; cursor:help; color:var(--text-2); font-size:11px;
+    text-transform:none; letter-spacing:normal; font-weight:400;
+  }
+  .info-icon:hover{color:var(--accent);}
+  .overview-stat label .info-icon{margin-left:5px;}
+  th.sortable{cursor:pointer; user-select:none;}
+  th.sortable:hover{color:var(--accent);}
+  tbody td{padding:11px 14px; border-bottom:1px solid var(--line); font-family:var(--mono); text-align:right; white-space:nowrap;}
+  tbody tr:hover{background:var(--bg-soft);}
+  tbody tr.totalrow{font-weight:700; background:var(--accent-soft);}
+  tbody tr.totalrow td{border-top:2px solid var(--accent-line);}
+  .tablewrap{overflow-x:auto;}
+  .thumb-box{
+    width:72px; height:72px; border-radius:8px; border:1.5px dashed var(--line); background:var(--bg-soft);
+    display:flex; align-items:center; justify-content:center; cursor:pointer; font-size:10.5px;
+    color:var(--text-2); text-align:center; line-height:1.3; overflow:hidden; position:relative;
+  }
+  .thumb-box:hover{border-color:var(--accent); color:var(--accent);}
+  .thumb-box.has-img{border-style:solid; border-color:var(--line); padding:0; cursor:default; background:repeating-conic-gradient(#f4f6fb 0% 25%, #eaedf6 0% 50%) 50% / 12px 12px;}
+  .thumb-box.has-img img{width:100%; height:100%; display:block; pointer-events:none;}
+  .thumb-fit-toggle{
+    position:absolute; right:2px; bottom:2px; width:18px; height:18px; border-radius:5px; border:none;
+    background:#171b26cc; color:#fff; font-size:10px; line-height:1; cursor:pointer; display:flex;
+    align-items:center; justify-content:center;
+  }
+  .thumb-fit-toggle:hover{background:#171b26;}
+  .thumb-del{
+    position:absolute; right:2px; top:2px; width:18px; height:18px; border-radius:5px; border:none;
+    background:#d1435fcc; color:#fff; font-size:11px; line-height:1; cursor:pointer; display:flex;
+    align-items:center; justify-content:center;
+  }
+  .thumb-del:hover{background:var(--danger);}
+
+  .statebox{padding:60px 20px; text-align:center; color:var(--text-2); font-size:13px;}
+  .statebox.error{color:var(--danger);}
+  .snapshot-banner{
+    display:flex; align-items:center; gap:10px; padding:10px 16px; background:#fff7e8; color:#8a5a00;
+    border-bottom:1px solid #f0dcae; font-size:12.5px;
+  }
+</style>
+</head>
+<body>
+
+  <div class="topbar">
+    <div class="brand">
+      <div class="brand-mark">CF</div>
+      <div class="brand-text">
+        <h1 id="projectTitle">成效報表</h1>
+      </div>
+    </div>
+  </div>
+
+  <div class="projecttabs" id="projectTabs"></div>
+
+  <div class="wrap">
+    <div class="controlsbar">
+      <div class="presetgroup" id="presetGroup"></div>
+      <div class="dateinputs">
+        <span>至</span>
+        <input type="date" id="sinceInput">
+        <span>—</span>
+        <input type="date" id="untilInput">
+      </div>
+      <button class="refreshbtn" id="refreshBtn">更新資料</button>
+      <span class="updated" id="updatedAt"></span>
+    </div>
+
+    <div class="overview-region" id="overviewRegion" style="display:none;">
+      <div class="overview-stats" id="overviewStats"></div>
+      <div class="overview-charts-row">
+        <div class="chartcard" style="height:300px;">
+          <h4>每日趨勢</h4>
+          <div class="canvaswrap"><canvas id="overviewTrendCanvas"></canvas></div>
+        </div>
+        <div class="chartcard" style="height:300px;">
+          <h4>各貼文花費佔比</h4>
+          <div class="canvaswrap"><canvas id="overviewDonutCanvas"></canvas></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="viewtabs" id="viewTabs"></div>
+
+    <div class="detailtoolbar">
+      <div class="postfilter">
+        <span>篩選貼文（只影響下面這份資料）</span>
+        <select id="postFilterSelect"></select>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="stats-strip" id="statsStrip"></div>
+      <div class="chartwrap" id="chartWrap" style="display:none;">
+        <div class="chartgrid" id="chartGrid"></div>
+      </div>
+      <div class="tablewrap" id="tableWrap">
+        <div class="statebox">點擊「更新資料」開始載入</div>
+      </div>
+    </div>
+  </div>
+
+<script>
+/* ================= 設定：後端網址 + 各專案對應的帳戶／活動 ID ================= */
+/* 部署好 Cloudflare Worker 之後，把下面這個網址換成你自己的 */
+const BACKEND_URL = 'https://ad-dashboard-backend.jannnjc.workers.dev';
+
+const PROJECTS = [
+  {
+    id: 'snoopy_bandage',
+    name: '史努比繃帶',
+    account: '鑫夢想 (G2_A240270_TW)',
+    accountId: '1575508609726259',
+    // 對應你預算表上的每一列；campaignId 是 null 代表這篇貼文在 Meta 裡還沒建立廣告活動。
+    // 「廣告貼文」原本規劃是兩階段（合計 NT$26,000），比對 Meta 實際設定後，
+    // 目前只有第一階段（8/14-8/20，NT$7,000）已經建立，第二階段還沒有。
+    posts: [
+      { label: '廣告貼文', goal: '銷售', planBudget: 7000, planDates: '8/14-8/20', campaignId: '120253580020810401' },
+      { label: '廣告貼文', goal: '銷售', planBudget: 18200, planDates: '8/21-9/15', campaignId: null },
+      { label: '前台貼文-留言活動', goal: '曝光', planBudget: 2000, planDates: '8/11-8/15', campaignId: '120253578116920401' },
+      { label: '前台貼文-留言活動', goal: '互動', planBudget: 2000, planDates: '8/11-8/15', campaignId: '120253577685290401' },
+      { label: '前台貼文-開賣', goal: '曝光', planBudget: 4200, planDates: '8/14-8/20', campaignId: null },
+      { label: '前台貼文-夜光', goal: '曝光', planBudget: 2000, planDates: '8/17-8/21', campaignId: null },
+      { label: '前台貼文-造型', goal: '互動', planBudget: 2000, planDates: '8/21-8/25', campaignId: null },
+      { label: '前台貼文-倒數', goal: '曝光', planBudget: 1800, planDates: '8/27-8/31', campaignId: null },
+    ],
+  },
+  { id: 'idle_minini', name: 'i-dle minini 悠遊卡', account: '鑫夢想', accountId: '1575508609726259', posts: [] },
+  { id: 'lulu_card', name: 'LULU豬票證卡', account: '鑫夢想', accountId: '1575508609726259', posts: [] },
+  { id: 'bct_3rd', name: 'BCT三週年', account: '鑫夢想', accountId: '1575508609726259', posts: [] },
+  { id: 'monster_girls', name: '獵魔女團快閃店-台中場', account: '鑫夢想', accountId: '1575508609726259', posts: [] },
+  { id: 'tom_jerry', name: '湯姆貓與傑利鼠快閃店', account: '辰星文創', accountId: '3937660096493846', posts: [] },
+  { id: 'messi_wine', name: '梅西酒', account: '鑫羿(酒類)', accountId: '1305008627391731', posts: [] },
+  { id: 'world_cup', name: '世足系列', account: '鑫羿(酒類)', accountId: '1305008627391731', posts: [] },
+  { id: 'xinyi_9th', name: '鑫羿9週年', account: '鑫羿(酒類)', accountId: '1305008627391731', posts: [] },
+  {
+    id: 'kamen_rider_wine',
+    name: '假面騎士造型紀念酒新一號款',
+    account: '鑫羿(酒類)',
+    accountId: '1305008627391731',
+    posts: [
+      { label: '前台貼文-留言活動', goal: '互動', planBudget: 3000, planDates: '8/13-8/18', campaignId: '120247970912620630' },
+      { label: '前台貼文-留言活動', goal: '曝光', planBudget: 4500, planDates: '8/19-8/24', campaignId: '120247971989690630' },
+    ],
+  },
+  {
+    id: 'kamen_rider_oil_wine',
+    name: '假面騎士機油瓶造型酒',
+    account: '鑫羿(酒類)',
+    accountId: '1305008627391731',
+    // 同一個 IP、不同品項的舊案子，已經投放完畢（Meta 上都是 PAUSED），共 11 個廣告活動。
+    posts: [
+      { label: '廣告貼文', goal: '銷售', planBudget: 38561, planDates: '5/19-6/30', campaignId: '120243819936380630' },
+      { label: 'KOL投廣-Nicky哥', goal: '導流', planBudget: 10003, planDates: '5/28-7/22', campaignId: '120244595569560630' },
+      { label: 'KOL投廣-崧宇', goal: '導流', planBudget: 7700, planDates: '7/2-7/22', campaignId: '120246954792860630' },
+      { label: 'KOL投廣-變身', goal: '導流', planBudget: 9800, planDates: '7/2-7/29', campaignId: '120246954558110630' },
+      { label: 'KOL投廣-小麥&鑫翊', goal: '導流', planBudget: 4200, planDates: '7/14-7/28', campaignId: '120247300773070630' },
+      { label: 'KOL投廣-小麥&鳳', goal: '導流', planBudget: 2400, planDates: '7/21-7/28', campaignId: '120247449307830630' },
+      { label: '前台貼文-畢業季抽獎', goal: '互動', planBudget: 3000, planDates: '6/2-7/22', campaignId: '120244700402810630' },
+      { label: '前台貼文-露營必備酒款', goal: '曝光', planBudget: 500, planDates: '6/1-6/1', campaignId: '120244700350880630' },
+      { label: '前台貼文-產品形象影片', goal: '觀看', planBudget: 1500, planDates: '5/19-5/21', campaignId: '120244049964110630' },
+      { label: '前台貼文-正式開賣', goal: '互動', planBudget: 2500, planDates: '5/20-5/24', campaignId: '120243820585200630' },
+      { label: '前台貼文-玩具展', goal: '曝光', planBudget: 2500, planDates: '5/22-6/1', campaignId: '120243820296660630' },
+    ],
+  },
+];
+
+function getCampaignIds(project) {
+  return (project.posts || []).map((p) => p.campaignId).filter(Boolean);
+}
+
+const PRESETS = [
+  { key: 'today', label: '今天' },
+  { key: 'yesterday', label: '昨天' },
+  { key: 'last7', label: '近7天' },
+  { key: 'thismonth', label: '本月' },
+  { key: 'lastmonth', label: '上月' },
+  { key: 'alltime', label: '總走期' },
+];
+
+const VIEWS = [
+  { key: 'post', label: '貼文' },
+  { key: 'daily', label: 'Daily' },
+  { key: 'gender', label: '性別' },
+  { key: 'age', label: '年齡' },
+  { key: 'adset', label: '廣告組合' },
+  { key: 'ad', label: '廣告' },
+  { key: 'placement', label: '版位' },
+];
+
+const FIRST_COL_LABEL = { post: '貼文', daily: '日期', gender: '性別', age: '年齡', placement: '版位', adset: '廣告組合', ad: '廣告' };
+
+const METRIC_COLS = [
+  { key: 'impressions', label: '曝光' },
+  { key: 'reach', label: '觸及' },
+  { key: 'clicks', label: '點擊 (全部)' },
+  { key: 'link_clicks', label: '連結點擊' },
+  { key: 'cpc_all', label: 'CPC(all)' },
+  { key: 'cpc_link', label: 'CPC(link)' },
+  { key: 'cpm', label: 'CPM' },
+  { key: 'ctr_all', label: 'CTR(ALL)', pct: true },
+  { key: 'add_to_cart', label: '加入購物車' },
+  { key: 'purchases', label: '購買' },
+  { key: 'purchase_value', label: '購買轉換值' },
+  { key: 'roas', label: 'ROAS' },
+  { key: 'spend', label: '花費金額' },
+];
+
+// 滑到欄位標題旁的 ⓘ 會顯示這些說明；有計算公式的直接寫「A ÷ B」，方便客戶自己核對數字
+const METRIC_DEFINITIONS = {
+  impressions: '廣告被顯示的總次數，同一個人被重複觸及也會一直累加。',
+  reach: '看過這則廣告的不重複人數。⚠️ 注意：這份報表把多天／多受眾／多篇貼文的數字合併呈現時，是直接把每組的觸及人數加總，同一個人如果在不同天或不同貼文都被觸及會被重複計算，不是真正去重後的總人數，僅供參考。',
+  clicks: '所有點擊次數的加總，包含點連結、按讚、留言、分享等各種互動點擊。',
+  link_clicks: '只計算點擊廣告連結、前往你指定網頁的次數（不含按讚留言等其他點擊）。',
+  cpc_all: 'CPC(all) ＝ 花費金額 ÷ 點擊(全部)，平均每一次點擊的成本。',
+  cpc_link: 'CPC(link) ＝ 花費金額 ÷ 連結點擊，平均每一次「連到網站」的成本。',
+  cpm: 'CPM ＝ 花費金額 ÷ 曝光 × 1000，每千次曝光要花多少錢。',
+  ctr_all: 'CTR(ALL) ＝ 點擊(全部) ÷ 曝光 × 100%，曝光後有多少比例被點擊。',
+  add_to_cart: '使用者在網站上觸發「加入購物車」事件的次數。',
+  purchases: '追蹤到的完成購買次數。',
+  purchase_value: '這些購買訂單加起來的總金額。',
+  roas: 'ROAS ＝ 購買轉換值 ÷ 花費金額，代表每花 1 元廣告費帶回多少營收（例如 3x 代表帶回 3 倍營收）。',
+  spend: '這段期間實際花費的廣告金額。',
+};
+
+function metricHeaderCells(cols) {
+  return cols.map((c) => {
+    const def = METRIC_DEFINITIONS[c.key];
+    const info = def ? `<span class="info-icon" title="${escapeHtml(def)}">ⓘ</span>` : '';
+    return `<th class="sortable" data-sort-key="${c.key}">${c.label}${sortArrow(c.key)}${info}</th>`;
+  }).join('');
+}
+
+const GENDER_LABEL = { male: '男性', female: '女性', unknown: '未知' };
+const PLATFORM_LABEL = { facebook: 'Facebook', instagram: 'Instagram', threads: 'Threads', messenger: 'Messenger', audience_network: 'Audience Network' };
+// 目前這個帳戶所有投遞都在 Facebook（已用 publisher_platform 拆解確認過，沒有 IG/Threads 版位），
+// 所以「動態消息」直接標成 Facebook；之後如果開始投 IG/Threads，這裡要記得改成依實際平台顯示。
+const POSITION_LABEL = {
+  feed: 'Facebook 動態消息', story: '限時動態', stories: '限時動態', reels: 'Reels', instream_video: '串流影音',
+  marketplace: 'Marketplace', right_hand_column: '右側欄', search: '搜尋', video_feeds: '影片動態', groups_feed: '社團動態',
+  facebook_reels: 'Facebook Reels', facebook_stories: 'Facebook 限時動態', facebook_profile_feed: 'Facebook 個人檔案動態消息',
+  instagram_reels: 'Instagram Reels', instagram_stories: 'Instagram 限時動態', instagram_explore: 'Instagram 探索',
+};
+
+let state = {
+  projectId: PROJECTS[0].id,
+  view: 'post',
+  postFilter: 'all',
+  preset: 'todate',
+  since: '',
+  until: '',
+};
+
+// 欄位排序狀態（點表頭切換）；key 是 METRIC_COLS 的 key 或 '__label'（代表最左邊那個欄位，如日期/性別/年齡）
+let sortState = { key: null, dir: 'desc' };
+// 記住最後一次成功載入的資料，讓「點表頭排序」不用重新打 API，直接用同一份資料重新排序、重畫
+let lastRender = null;
+
+/* ================= 快照資料（2026-08-12 抓取，尚未接後端時先顯示這份） ================= */
+const SNAPSHOTS = {
+  snoopy_bandage: {
+    fetchedAt: '2026-08-12 09:40',
+    since: '2026-08-11',
+    until: '2026-08-12',
+    postOptions: [
+      { key: 'all', label: '全部貼文' },
+      { key: '120253578116920401', label: '前台貼文-留言活動（曝光 / CPM）' },
+      { key: '120253577685290401', label: '前台貼文-留言活動（互動 / CPC）' },
+    ],
+    data: {
+      all: {
+        post: {
+          // 只列出已經在 Meta 建立廣告活動的貼文；開賣/夜光/造型/倒數目前還沒建立，先不顯示
+          rows: [
+            { key: '120253577685290401', label: '前台貼文-留言活動', goal: '互動', planBudget: 2000, planDates: '8/11-8/15', impressions: 12506, reach: 11478, clicks: 426, link_clicks: 88, cpc_all: 1.02, cpc_link: 4.94, cpm: 34.79, ctr_all: 3.41, add_to_cart: 0, purchases: 0, purchase_value: 0, roas: 0, spend: 435 },
+            { key: '120253578116920401', label: '前台貼文-留言活動', goal: '曝光', planBudget: 2000, planDates: '8/11-8/15', impressions: 32725, reach: 30705, clicks: 78, link_clicks: 34, cpc_all: 5.73, cpc_link: 13.15, cpm: 13.66, ctr_all: 0.24, add_to_cart: 0, purchases: 0, purchase_value: 0, roas: 0, spend: 447 },
+            { key: '120253580020810401', label: '廣告貼文', goal: '銷售', planBudget: 7000, planDates: '8/14-8/20', impressions: 0, reach: 0, clicks: 0, link_clicks: 0, cpc_all: 0, cpc_link: 0, cpm: 0, ctr_all: 0, add_to_cart: 0, purchases: 0, purchase_value: 0, roas: 0, spend: 0 },
+          ],
+          totals: { impressions: 45231, reach: 42183, clicks: 504, link_clicks: 122, cpc_all: 1.75, cpc_link: 7.23, cpm: 19.50, ctr_all: 1.11, add_to_cart: 0, purchases: 0, purchase_value: 0, roas: 0, spend: 882 },
+        },
+        daily: {
+          rows: [
+            { key: '2026-08-11', label: '2026-08-11', impressions: 22357, reach: 20475, clicks: 207, link_clicks: 50, cpc_all: 1.71, cpc_link: 7.08, cpm: 15.84, ctr_all: 0.93, add_to_cart: 0, purchases: 0, purchase_value: 0, roas: 0, spend: 354 },
+            { key: '2026-08-12', label: '2026-08-12', impressions: 22874, reach: 21708, clicks: 297, link_clicks: 72, cpc_all: 1.78, cpc_link: 7.33, cpm: 23.09, ctr_all: 1.30, add_to_cart: 0, purchases: 0, purchase_value: 0, roas: 0, spend: 528 },
+          ],
+          totals: { impressions: 45231, reach: 42183, clicks: 504, link_clicks: 122, cpc_all: 1.75, cpc_link: 7.23, cpm: 19.50, ctr_all: 1.11, add_to_cart: 0, purchases: 0, purchase_value: 0, roas: 0, spend: 882 },
+        },
+        gender: {
+          rows: [
+            { key: 'male', label: 'male', impressions: 31025, reach: 28019, clicks: 250, link_clicks: 75, cpc_all: 2.04, cpc_link: 6.79, cpm: 16.41, ctr_all: 0.81, add_to_cart: 0, purchases: 0, purchase_value: 0, roas: 0, spend: 509 },
+            { key: 'female', label: 'female', impressions: 13756, reach: 12122, clicks: 251, link_clicks: 47, cpc_all: 1.45, cpc_link: 7.77, cpm: 26.53, ctr_all: 1.83, add_to_cart: 0, purchases: 0, purchase_value: 0, roas: 0, spend: 365 },
+            { key: 'unknown', label: 'unknown', impressions: 450, reach: 392, clicks: 3, link_clicks: 0, cpc_all: 2.67, cpc_link: 0, cpm: 17.78, ctr_all: 0.67, add_to_cart: 0, purchases: 0, purchase_value: 0, roas: 0, spend: 8 },
+          ],
+          totals: { impressions: 45231, reach: 40533, clicks: 504, link_clicks: 122, cpc_all: 1.75, cpc_link: 7.23, cpm: 19.50, ctr_all: 1.11, add_to_cart: 0, purchases: 0, purchase_value: 0, roas: 0, spend: 882 },
+        },
+        age: {
+          rows: [
+            { key: '55-64', label: '55-64', impressions: 7242, reach: 6282, clicks: 106, link_clicks: 19, cpc_all: 2.01, cpc_link: 11.21, cpm: 29.42, ctr_all: 1.46, add_to_cart: 0, purchases: 0, purchase_value: 0, roas: 0, spend: 213 },
+            { key: '25-34', label: '25-34', impressions: 11077, reach: 10368, clicks: 71, link_clicks: 24, cpc_all: 2.32, cpc_link: 6.88, cpm: 14.90, ctr_all: 0.64, add_to_cart: 0, purchases: 0, purchase_value: 0, roas: 0, spend: 165 },
+            { key: '45-54', label: '45-54', impressions: 7235, reach: 6338, clicks: 143, link_clicks: 29, cpc_all: 1.08, cpc_link: 5.34, cpm: 21.42, ctr_all: 1.98, add_to_cart: 0, purchases: 0, purchase_value: 0, roas: 0, spend: 155 },
+            { key: '35-44', label: '35-44', impressions: 8144, reach: 7184, clicks: 128, link_clicks: 30, cpc_all: 1.17, cpc_link: 5.00, cpm: 18.42, ctr_all: 1.57, add_to_cart: 0, purchases: 0, purchase_value: 0, roas: 0, spend: 150 },
+            { key: '65+', label: '65+', impressions: 5097, reach: 4279, clicks: 44, link_clicks: 14, cpc_all: 2.52, cpc_link: 7.93, cpm: 21.78, ctr_all: 0.86, add_to_cart: 0, purchases: 0, purchase_value: 0, roas: 0, spend: 111 },
+            { key: '18-24', label: '18-24', impressions: 6436, reach: 5636, clicks: 12, link_clicks: 6, cpc_all: 7.33, cpc_link: 14.67, cpm: 13.67, ctr_all: 0.19, add_to_cart: 0, purchases: 0, purchase_value: 0, roas: 0, spend: 88 },
+          ],
+          totals: { impressions: 45231, reach: 40087, clicks: 504, link_clicks: 122, cpc_all: 1.75, cpc_link: 7.23, cpm: 19.50, ctr_all: 1.11, add_to_cart: 0, purchases: 0, purchase_value: 0, roas: 0, spend: 882 },
+        },
+        placement: {
+          rows: [
+            { key: 'feed', label: 'feed', impressions: 36716, reach: 33034, clicks: 474, link_clicks: 118, cpc_all: 1.57, cpc_link: 6.29, cpm: 20.21, ctr_all: 1.29, add_to_cart: 0, purchases: 0, purchase_value: 0, roas: 0, spend: 742 },
+            { key: 'facebook_reels', label: 'facebook_reels', impressions: 8465, reach: 7588, clicks: 30, link_clicks: 4, cpc_all: 4.67, cpc_link: 35.00, cpm: 16.54, ctr_all: 0.35, add_to_cart: 0, purchases: 0, purchase_value: 0, roas: 0, spend: 140 },
+            { key: 'facebook_profile_feed', label: 'facebook_profile_feed', impressions: 29, reach: 29, clicks: 0, link_clicks: 0, cpc_all: 0, cpc_link: 0, cpm: 0, ctr_all: 0, add_to_cart: 0, purchases: 0, purchase_value: 0, roas: 0, spend: 0 },
+            { key: 'facebook_stories', label: 'facebook_stories', impressions: 21, reach: 21, clicks: 0, link_clicks: 0, cpc_all: 0, cpc_link: 0, cpm: 0, ctr_all: 0, add_to_cart: 0, purchases: 0, purchase_value: 0, roas: 0, spend: 0 },
+          ],
+          totals: { impressions: 45231, reach: 40672, clicks: 504, link_clicks: 122, cpc_all: 1.75, cpc_link: 7.23, cpm: 19.50, ctr_all: 1.11, add_to_cart: 0, purchases: 0, purchase_value: 0, roas: 0, spend: 882 },
+        },
+        adset: {
+          // 同名的廣告組合（同一個受眾，只是分別掛在 CPM/CPC 兩個廣告活動下）已經合併加總，不重複列出
+          rows: [
+            { key: 'TA2 玩具相關', label: 'TA2 玩具相關', impressions: 16264, reach: 15777, clicks: 120, link_clicks: 23, cpc_all: 2.57, cpc_link: 13.39, cpm: 18.94, ctr_all: 0.74, add_to_cart: 0, purchases: 0, purchase_value: 0, roas: 0, spend: 308 },
+            { key: 'TA1 卡通相關', label: 'TA1 卡通相關', impressions: 10059, reach: 9679, clicks: 163, link_clicks: 47, cpc_all: 1.45, cpc_link: 5.04, cpm: 23.56, ctr_all: 1.62, add_to_cart: 0, purchases: 0, purchase_value: 0, roas: 0, spend: 237 },
+            { key: 'TA3 RT+LAL3%', label: 'TA3 RT+LAL3%', impressions: 11700, reach: 11649, clicks: 83, link_clicks: 22, cpc_all: 2.23, cpc_link: 8.41, cpm: 15.81, ctr_all: 0.71, add_to_cart: 0, purchases: 0, purchase_value: 0, roas: 0, spend: 185 },
+            { key: 'TA4 懷舊文物相關', label: 'TA4 懷舊文物相關', impressions: 7208, reach: 6854, clicks: 138, link_clicks: 30, cpc_all: 1.10, cpc_link: 5.07, cpm: 21.09, ctr_all: 1.91, add_to_cart: 0, purchases: 0, purchase_value: 0, roas: 0, spend: 152 },
+          ],
+          totals: { impressions: 45231, reach: 43959, clicks: 504, link_clicks: 122, cpc_all: 1.75, cpc_link: 7.23, cpm: 19.50, ctr_all: 1.11, add_to_cart: 0, purchases: 0, purchase_value: 0, roas: 0, spend: 882 },
+        },
+        ad: {
+          rows: [
+            { key: '前台貼文-留言活動(CPM)', label: '前台貼文-留言活動(CPM)', impressions: 32725, reach: 30705, clicks: 78, link_clicks: 34, cpc_all: 5.73, cpc_link: 13.15, cpm: 13.66, ctr_all: 0.24, add_to_cart: 0, purchases: 0, purchase_value: 0, roas: 0, spend: 447 },
+            { key: '前台貼文-留言活動(CPC)', label: '前台貼文-留言活動(CPC)', impressions: 12506, reach: 11478, clicks: 426, link_clicks: 88, cpc_all: 1.02, cpc_link: 4.94, cpm: 34.79, ctr_all: 3.41, add_to_cart: 0, purchases: 0, purchase_value: 0, roas: 0, spend: 435 },
+          ],
+          totals: { impressions: 45231, reach: 42183, clicks: 504, link_clicks: 122, cpc_all: 1.75, cpc_link: 7.23, cpm: 19.50, ctr_all: 1.11, add_to_cart: 0, purchases: 0, purchase_value: 0, roas: 0, spend: 882 },
+        },
+      },
+
+      /* -------- 只看「留言活動（曝光 / CPM）」這一篇貼文自己的受眾/素材/版位 -------- */
+      '120253578116920401': {
+        daily: {
+          rows: [
+            { key: '2026-08-11', label: '2026-08-11', impressions: 17890, reach: 16473, clicks: 49, link_clicks: 18, cpc_all: 4.65, cpc_link: 12.67, cpm: 12.75, ctr_all: 0.27, add_to_cart: 0, purchases: 0, purchase_value: 0, roas: 0, spend: 228 },
+            { key: '2026-08-12', label: '2026-08-12', impressions: 14835, reach: 14232, clicks: 29, link_clicks: 16, cpc_all: 7.55, cpc_link: 13.69, cpm: 14.76, ctr_all: 0.20, add_to_cart: 0, purchases: 0, purchase_value: 0, roas: 0, spend: 219 },
+          ],
+          totals: { impressions: 32725, reach: 30705, clicks: 78, link_clicks: 34, cpc_all: 5.73, cpc_link: 13.15, cpm: 13.66, ctr_all: 0.24, add_to_cart: 0, purchases: 0, purchase_value: 0, roas: 0, spend: 447 },
+        },
+        gender: {
+          rows: [
+            { key: 'male', label: 'male', impressions: 26024, reach: 23644, clicks: 67, link_clicks: 30, cpc_all: 5.16, cpc_link: 11.53, cpm: 13.30, ctr_all: 0.26, add_to_cart: 0, purchases: 0, purchase_value: 0, roas: 0, spend: 346 },
+            { key: 'female', label: 'female', impressions: 6328, reach: 5505, clicks: 11, link_clicks: 4, cpc_all: 8.55, cpc_link: 23.50, cpm: 14.85, ctr_all: 0.17, add_to_cart: 0, purchases: 0, purchase_value: 0, roas: 0, spend: 94 },
+            { key: 'unknown', label: 'unknown', impressions: 373, reach: 320, clicks: 0, link_clicks: 0, cpc_all: 0, cpc_link: 0, cpm: 18.77, ctr_all: 0, add_to_cart: 0, purchases: 0, purchase_value: 0, roas: 0, spend: 7 },
+          ],
+          totals: { impressions: 32725, reach: 29469, clicks: 78, link_clicks: 34, cpc_all: 5.73, cpc_link: 13.15, cpm: 13.66, ctr_all: 0.24, add_to_cart: 0, purchases: 0, purchase_value: 0, roas: 0, spend: 447 },
+        },
+        age: {
+          rows: [
+            { key: '25-34', label: '25-34', impressions: 10015, reach: 9437, clicks: 31, link_clicks: 14, cpc_all: 4.23, cpc_link: 9.36, cpm: 13.08, ctr_all: 0.31, add_to_cart: 0, purchases: 0, purchase_value: 0, roas: 0, spend: 131 },
+            { key: '18-24', label: '18-24', impressions: 6229, reach: 5445, clicks: 11, link_clicks: 6, cpc_all: 7.73, cpc_link: 14.17, cpm: 13.65, ctr_all: 0.18, add_to_cart: 0, purchases: 0, purchase_value: 0, roas: 0, spend: 85 },
+            { key: '35-44', label: '35-44', impressions: 5665, reach: 4936, clicks: 16, link_clicks: 5, cpc_all: 4.88, cpc_link: 15.60, cpm: 13.77, ctr_all: 0.28, add_to_cart: 0, purchases: 0, purchase_value: 0, roas: 0, spend: 78 },
+            { key: '55-64', label: '55-64', impressions: 3950, reach: 3428, clicks: 7, link_clicks: 3, cpc_all: 10.00, cpc_link: 23.33, cpm: 17.72, ctr_all: 0.18, add_to_cart: 0, purchases: 0, purchase_value: 0, roas: 0, spend: 70 },
+            { key: '65+', label: '65+', impressions: 3420, reach: 2855, clicks: 6, link_clicks: 4, cpc_all: 8.33, cpc_link: 12.50, cpm: 14.62, ctr_all: 0.18, add_to_cart: 0, purchases: 0, purchase_value: 0, roas: 0, spend: 50 },
+            { key: '45-54', label: '45-54', impressions: 3446, reach: 2961, clicks: 7, link_clicks: 2, cpc_all: 4.71, cpc_link: 16.50, cpm: 9.58, ctr_all: 0.20, add_to_cart: 0, purchases: 0, purchase_value: 0, roas: 0, spend: 33 },
+          ],
+          totals: { impressions: 32725, reach: 29062, clicks: 78, link_clicks: 34, cpc_all: 5.73, cpc_link: 13.15, cpm: 13.66, ctr_all: 0.24, add_to_cart: 0, purchases: 0, purchase_value: 0, roas: 0, spend: 447 },
+        },
+        placement: {
+          rows: [
+            { key: 'feed', label: 'feed', impressions: 24431, reach: 22218, clicks: 68, link_clicks: 32, cpc_all: 4.65, cpc_link: 9.88, cpm: 12.93, ctr_all: 0.28, add_to_cart: 0, purchases: 0, purchase_value: 0, roas: 0, spend: 316 },
+            { key: 'facebook_reels', label: 'facebook_reels', impressions: 8246, reach: 7390, clicks: 10, link_clicks: 2, cpc_all: 13.10, cpc_link: 65.50, cpm: 15.89, ctr_all: 0.12, add_to_cart: 0, purchases: 0, purchase_value: 0, roas: 0, spend: 131 },
+            { key: 'facebook_profile_feed', label: 'facebook_profile_feed', impressions: 28, reach: 28, clicks: 0, link_clicks: 0, cpc_all: 0, cpc_link: 0, cpm: 0, ctr_all: 0, add_to_cart: 0, purchases: 0, purchase_value: 0, roas: 0, spend: 0 },
+            { key: 'facebook_stories', label: 'facebook_stories', impressions: 20, reach: 20, clicks: 0, link_clicks: 0, cpc_all: 0, cpc_link: 0, cpm: 0, ctr_all: 0, add_to_cart: 0, purchases: 0, purchase_value: 0, roas: 0, spend: 0 },
+          ],
+          totals: { impressions: 32725, reach: 29656, clicks: 78, link_clicks: 34, cpc_all: 5.73, cpc_link: 13.15, cpm: 13.66, ctr_all: 0.24, add_to_cart: 0, purchases: 0, purchase_value: 0, roas: 0, spend: 447 },
+        },
+        adset: {
+          rows: [
+            { key: '120253578116970401', label: 'TA2 玩具相關', impressions: 12513, reach: 12238, clicks: 19, link_clicks: 7, cpc_all: 9.00, cpc_link: 24.43, cpm: 13.66, ctr_all: 0.15, add_to_cart: 0, purchases: 0, purchase_value: 0, roas: 0, spend: 171 },
+            { key: '120253578116960401', label: 'TA3 RT+LAL3%', impressions: 10980, reach: 10980, clicks: 39, link_clicks: 16, cpc_all: 4.15, cpc_link: 10.13, cpm: 14.75, ctr_all: 0.36, add_to_cart: 0, purchases: 0, purchase_value: 0, roas: 0, spend: 162 },
+            { key: '120253578116910401', label: 'TA1 卡通相關', impressions: 5270, reach: 5127, clicks: 11, link_clicks: 8, cpc_all: 6.00, cpc_link: 8.25, cpm: 12.52, ctr_all: 0.21, add_to_cart: 0, purchases: 0, purchase_value: 0, roas: 0, spend: 66 },
+            { key: '120253578181420401', label: 'TA4 懷舊文物相關', impressions: 3962, reach: 3866, clicks: 9, link_clicks: 3, cpc_all: 5.33, cpc_link: 16.00, cpm: 12.11, ctr_all: 0.23, add_to_cart: 0, purchases: 0, purchase_value: 0, roas: 0, spend: 48 },
+          ],
+          totals: { impressions: 32725, reach: 32211, clicks: 78, link_clicks: 34, cpc_all: 5.73, cpc_link: 13.15, cpm: 13.66, ctr_all: 0.24, add_to_cart: 0, purchases: 0, purchase_value: 0, roas: 0, spend: 447 },
+        },
+        ad: {
+          rows: [
+            { key: '前台貼文-留言活動(CPM)', label: '前台貼文-留言活動(CPM)', impressions: 32725, reach: 30705, clicks: 78, link_clicks: 34, cpc_all: 5.73, cpc_link: 13.15, cpm: 13.66, ctr_all: 0.24, add_to_cart: 0, purchases: 0, purchase_value: 0, roas: 0, spend: 447 },
+          ],
+          totals: { impressions: 32725, reach: 30705, clicks: 78, link_clicks: 34, cpc_all: 5.73, cpc_link: 13.15, cpm: 13.66, ctr_all: 0.24, add_to_cart: 0, purchases: 0, purchase_value: 0, roas: 0, spend: 447 },
+        },
+      },
+
+      /* -------- 只看「留言活動（互動 / CPC）」這一篇貼文自己的受眾/素材/版位 -------- */
+      '120253577685290401': {
+        daily: {
+          rows: [
+            { key: '2026-08-11', label: '2026-08-11', impressions: 4467, reach: 4002, clicks: 158, link_clicks: 32, cpc_all: 0.80, cpc_link: 3.94, cpm: 28.20, ctr_all: 3.54, add_to_cart: 0, purchases: 0, purchase_value: 0, roas: 0, spend: 126 },
+            { key: '2026-08-12', label: '2026-08-12', impressions: 8039, reach: 7476, clicks: 268, link_clicks: 56, cpc_all: 1.15, cpc_link: 5.52, cpm: 38.44, ctr_all: 3.33, add_to_cart: 0, purchases: 0, purchase_value: 0, roas: 0, spend: 309 },
+          ],
+          totals: { impressions: 12506, reach: 11478, clicks: 426, link_clicks: 88, cpc_all: 1.02, cpc_link: 4.94, cpm: 34.79, ctr_all: 3.41, add_to_cart: 0, purchases: 0, purchase_value: 0, roas: 0, spend: 435 },
+        },
+        gender: {
+          rows: [
+            { key: 'female', label: 'female', impressions: 7428, reach: 6617, clicks: 240, link_clicks: 43, cpc_all: 1.13, cpc_link: 6.30, cpm: 36.48, ctr_all: 3.23, add_to_cart: 0, purchases: 0, purchase_value: 0, roas: 0, spend: 271 },
+            { key: 'male', label: 'male', impressions: 5001, reach: 4375, clicks: 183, link_clicks: 45, cpc_all: 0.89, cpc_link: 3.62, cpm: 32.59, ctr_all: 3.66, add_to_cart: 0, purchases: 0, purchase_value: 0, roas: 0, spend: 163 },
+            { key: 'unknown', label: 'unknown', impressions: 77, reach: 72, clicks: 3, link_clicks: 0, cpc_all: 0.33, cpc_link: 0, cpm: 12.99, ctr_all: 3.90, add_to_cart: 0, purchases: 0, purchase_value: 0, roas: 0, spend: 1 },
+          ],
+          totals: { impressions: 12506, reach: 11064, clicks: 426, link_clicks: 88, cpc_all: 1.02, cpc_link: 4.94, cpm: 34.79, ctr_all: 3.41, add_to_cart: 0, purchases: 0, purchase_value: 0, roas: 0, spend: 435 },
+        },
+        age: {
+          rows: [
+            { key: '45-54', label: '45-54', impressions: 3789, reach: 3377, clicks: 136, link_clicks: 27, cpc_all: 0.90, cpc_link: 4.52, cpm: 32.20, ctr_all: 3.59, add_to_cart: 0, purchases: 0, purchase_value: 0, roas: 0, spend: 122 },
+            { key: '55-64', label: '55-64', impressions: 3292, reach: 2854, clicks: 99, link_clicks: 16, cpc_all: 1.44, cpc_link: 8.94, cpm: 43.44, ctr_all: 3.01, add_to_cart: 0, purchases: 0, purchase_value: 0, roas: 0, spend: 143 },
+            { key: '35-44', label: '35-44', impressions: 2479, reach: 2248, clicks: 112, link_clicks: 25, cpc_all: 0.64, cpc_link: 2.88, cpm: 29.04, ctr_all: 4.52, add_to_cart: 0, purchases: 0, purchase_value: 0, roas: 0, spend: 72 },
+            { key: '65+', label: '65+', impressions: 1677, reach: 1424, clicks: 38, link_clicks: 10, cpc_all: 1.61, cpc_link: 6.10, cpm: 36.37, ctr_all: 2.27, add_to_cart: 0, purchases: 0, purchase_value: 0, roas: 0, spend: 61 },
+            { key: '25-34', label: '25-34', impressions: 1062, reach: 931, clicks: 40, link_clicks: 10, cpc_all: 0.85, cpc_link: 3.40, cpm: 32.02, ctr_all: 3.77, add_to_cart: 0, purchases: 0, purchase_value: 0, roas: 0, spend: 34 },
+            { key: '18-24', label: '18-24', impressions: 207, reach: 191, clicks: 1, link_clicks: 0, cpc_all: 3.00, cpc_link: 0, cpm: 14.49, ctr_all: 0.48, add_to_cart: 0, purchases: 0, purchase_value: 0, roas: 0, spend: 3 },
+          ],
+          totals: { impressions: 12506, reach: 11025, clicks: 426, link_clicks: 88, cpc_all: 1.02, cpc_link: 4.94, cpm: 34.79, ctr_all: 3.41, add_to_cart: 0, purchases: 0, purchase_value: 0, roas: 0, spend: 435 },
+        },
+        placement: {
+          rows: [
+            { key: 'feed', label: 'feed', impressions: 12285, reach: 10816, clicks: 406, link_clicks: 86, cpc_all: 1.05, cpc_link: 4.95, cpm: 34.68, ctr_all: 3.30, add_to_cart: 0, purchases: 0, purchase_value: 0, roas: 0, spend: 426 },
+            { key: 'facebook_reels', label: 'facebook_reels', impressions: 219, reach: 198, clicks: 20, link_clicks: 2, cpc_all: 0.45, cpc_link: 4.50, cpm: 41.10, ctr_all: 9.13, add_to_cart: 0, purchases: 0, purchase_value: 0, roas: 0, spend: 9 },
+            { key: 'facebook_profile_feed', label: 'facebook_profile_feed', impressions: 1, reach: 1, clicks: 0, link_clicks: 0, cpc_all: 0, cpc_link: 0, cpm: 0, ctr_all: 0, add_to_cart: 0, purchases: 0, purchase_value: 0, roas: 0, spend: 0 },
+            { key: 'facebook_stories', label: 'facebook_stories', impressions: 1, reach: 1, clicks: 0, link_clicks: 0, cpc_all: 0, cpc_link: 0, cpm: 0, ctr_all: 0, add_to_cart: 0, purchases: 0, purchase_value: 0, roas: 0, spend: 0 },
+          ],
+          totals: { impressions: 12506, reach: 11016, clicks: 426, link_clicks: 88, cpc_all: 1.02, cpc_link: 4.94, cpm: 34.79, ctr_all: 3.41, add_to_cart: 0, purchases: 0, purchase_value: 0, roas: 0, spend: 435 },
+        },
+        adset: {
+          rows: [
+            { key: '120253577685360401', label: 'TA1 卡通相關', impressions: 4789, reach: 4552, clicks: 152, link_clicks: 39, cpc_all: 1.13, cpc_link: 4.38, cpm: 35.71, ctr_all: 3.17, add_to_cart: 0, purchases: 0, purchase_value: 0, roas: 0, spend: 171 },
+            { key: '120253577685350401', label: 'TA2 玩具相關', impressions: 3751, reach: 3539, clicks: 101, link_clicks: 16, cpc_all: 1.36, cpc_link: 8.56, cpm: 36.52, ctr_all: 2.69, add_to_cart: 0, purchases: 0, purchase_value: 0, roas: 0, spend: 137 },
+            { key: '120253577685370401', label: 'TA4 懷舊文物相關', impressions: 3246, reach: 2988, clicks: 129, link_clicks: 27, cpc_all: 0.81, cpc_link: 3.85, cpm: 32.03, ctr_all: 3.97, add_to_cart: 0, purchases: 0, purchase_value: 0, roas: 0, spend: 104 },
+            { key: '120253577685340401', label: 'TA3 RT+LAL3%', impressions: 720, reach: 669, clicks: 44, link_clicks: 6, cpc_all: 0.52, cpc_link: 3.83, cpm: 31.94, ctr_all: 6.11, add_to_cart: 0, purchases: 0, purchase_value: 0, roas: 0, spend: 23 },
+          ],
+          totals: { impressions: 12506, reach: 11748, clicks: 426, link_clicks: 88, cpc_all: 1.02, cpc_link: 4.94, cpm: 34.79, ctr_all: 3.41, add_to_cart: 0, purchases: 0, purchase_value: 0, roas: 0, spend: 435 },
+        },
+        ad: {
+          rows: [
+            { key: '前台貼文-留言活動(CPC)', label: '前台貼文-留言活動(CPC)', impressions: 12506, reach: 11478, clicks: 426, link_clicks: 88, cpc_all: 1.02, cpc_link: 4.94, cpm: 34.79, ctr_all: 3.41, add_to_cart: 0, purchases: 0, purchase_value: 0, roas: 0, spend: 435 },
+          ],
+          totals: { impressions: 12506, reach: 11478, clicks: 426, link_clicks: 88, cpc_all: 1.02, cpc_link: 4.94, cpm: 34.79, ctr_all: 3.41, add_to_cart: 0, purchases: 0, purchase_value: 0, roas: 0, spend: 435 },
+        },
+      },
+    },
+  },
+
+  kamen_rider_wine: {
+    // 這個案子今天（8/13）才剛開始投放，目前只有半天的資料，還累積不夠量做性別/年齡/版位拆解，
+    // 之後投放一段時間、或接上後端即時抓取後，這些分頁就會有內容了。
+    fetchedAt: '2026-08-13 16:20',
+    since: '2026-08-13',
+    until: '2026-08-13',
+    postOptions: [
+      { key: 'all', label: '全部貼文' },
+      { key: '120247970912620630', label: '前台貼文-留言活動（互動 / CPC）' },
+    ],
+    data: {
+      all: {
+        post: {
+          rows: [
+            { key: '120247970912620630', label: '前台貼文-留言活動', goal: '互動', planBudget: 3000, planDates: '8/13-8/18', impressions: 1474, reach: 1330, clicks: 155, link_clicks: 0, cpc_all: 0.30, cpc_link: 0, cpm: 31.20, ctr_all: 10.52, add_to_cart: 0, purchases: 0, purchase_value: 0, roas: 0, spend: 46 },
+          ],
+          totals: { impressions: 1474, reach: 1330, clicks: 155, link_clicks: 0, cpc_all: 0.30, cpc_link: 0, cpm: 31.20, ctr_all: 10.52, add_to_cart: 0, purchases: 0, purchase_value: 0, roas: 0, spend: 46 },
+        },
+        daily: {
+          rows: [
+            { key: '2026-08-13', label: '2026-08-13', impressions: 1474, reach: 1330, clicks: 155, link_clicks: 0, cpc_all: 0.30, cpc_link: 0, cpm: 31.20, ctr_all: 10.52, add_to_cart: 0, purchases: 0, purchase_value: 0, roas: 0, spend: 46 },
+          ],
+          totals: { impressions: 1474, reach: 1330, clicks: 155, link_clicks: 0, cpc_all: 0.30, cpc_link: 0, cpm: 31.20, ctr_all: 10.52, add_to_cart: 0, purchases: 0, purchase_value: 0, roas: 0, spend: 46 },
+        },
+      },
+    },
+  },
+};
+
+function fmtNum(n) {
+  if (n === undefined || n === null) return '—';
+  return Number(n).toLocaleString();
+}
+function fmtCell(col, val) {
+  if (val === undefined || val === null) return '—';
+  if (col.pct) return Number(val).toLocaleString() + '%';
+  return Number(val).toLocaleString();
+}
+function labelForRow(view, row) {
+  if (view === 'gender') return GENDER_LABEL[row.key] || row.label;
+  if (view === 'placement') return POSITION_LABEL[row.key] || row.label;
+  return row.label;
+}
+
+/* ---------------- 欄位排序：點表頭切換遞增/遞減，不用重新打 API ---------------- */
+function applySort(data, view) {
+  if (!sortState.key || !data || !data.rows) return data;
+  const rows = [...data.rows];
+  rows.sort((a, b) => {
+    let av, bv;
+    if (sortState.key === '__label') {
+      av = String(labelForRow(view, a));
+      bv = String(labelForRow(view, b));
+      const cmp = av.localeCompare(bv, 'zh-Hant');
+      return sortState.dir === 'asc' ? cmp : -cmp;
+    }
+    av = a[sortState.key] || 0;
+    bv = b[sortState.key] || 0;
+    return sortState.dir === 'asc' ? av - bv : bv - av;
+  });
+  return { rows, totals: data.totals };
+}
+
+function renderTableSorted(entry) {
+  lastRender = entry;
+  const sortedData = applySort(entry.data, entry.view);
+  renderStatsStrip(entry.data.totals);
+  renderTable(entry.view, sortedData, entry.isSnapshot, entry.snapshot, entry.ctx);
+}
+
+// 幫表格的 <th> 加上可點擊排序：data-sort-key="__label" 或 METRIC_COLS 的 key
+function attachSortHandlers(wrapEl, view) {
+  wrapEl.querySelectorAll('th[data-sort-key]').forEach((th) => {
+    th.addEventListener('click', () => {
+      const key = th.dataset.sortKey;
+      if (sortState.key === key) {
+        sortState.dir = sortState.dir === 'asc' ? 'desc' : 'asc';
+      } else {
+        sortState.key = key;
+        sortState.dir = 'desc';
+      }
+      if (lastRender) renderTableSorted(lastRender);
+    });
+  });
+}
+
+function sortArrow(key) {
+  if (sortState.key !== key) return '';
+  return sortState.dir === 'asc' ? ' ▲' : ' ▼';
+}
+
+function getActiveProject() {
+  return PROJECTS.find((p) => p.id === state.projectId);
+}
+
+const PROJECT_ORDER_KEY = 'project_order_v1';
+function getSavedOrder() {
+  try {
+    const raw = localStorage.getItem(PROJECT_ORDER_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch (e) { return null; }
+}
+function saveOrder(ids) {
+  try { localStorage.setItem(PROJECT_ORDER_KEY, JSON.stringify(ids)); } catch (e) { /* 存不進去就算了，不影響當次操作 */ }
+}
+function getOrderedProjects() {
+  const saved = getSavedOrder();
+  if (!saved) return PROJECTS;
+  const byId = new Map(PROJECTS.map((p) => [p.id, p]));
+  const ordered = saved.map((id) => byId.get(id)).filter(Boolean);
+  // 設定檔裡有、但還沒出現在你排過的順序裡的專案（例如之後新增的），補到最後面
+  PROJECTS.forEach((p) => { if (!saved.includes(p.id)) ordered.push(p); });
+  return ordered;
+}
+
+function renderProjectTabs() {
+  const bar = document.getElementById('projectTabs');
+  bar.innerHTML = '';
+  const orderedProjects = getOrderedProjects();
+
+  orderedProjects.forEach((p) => {
+    const tab = document.createElement('div');
+    const ready = getCampaignIds(p).length > 0;
+    tab.className = 'ptab' + (p.id === state.projectId ? ' active' : '') + (ready ? '' : ' disabled');
+    tab.draggable = true;
+    tab.innerHTML = `<span class="ptab-drag" title="拖曳調整順序">⠿</span><span class="ptab-label">${escapeHtml(p.name)}${ready ? '' : '（尚未設定）'}</span>`;
+
+    if (ready) {
+      tab.querySelector('.ptab-label').addEventListener('click', () => {
+        state.projectId = p.id;
+        state.postFilter = 'all';
+        sortState.key = null;
+        renderProjectTabs();
+        updateHeader();
+        renderPostFilter();
+        updateDateDisplay();
+        loadReport();
+        loadOverview();
+      });
+    }
+
+    // 拖曳排序：只認左邊的 ⠿ 把手，避免點名稱時不小心誤觸拖曳
+    let dragAllowed = false;
+    tab.addEventListener('mousedown', (e) => { dragAllowed = !!e.target.closest('.ptab-drag'); });
+    tab.addEventListener('dragstart', (e) => {
+      if (!dragAllowed) { e.preventDefault(); return; }
+      tab.classList.add('dragging');
+      e.dataTransfer.setData('text/plain', p.id);
+    });
+    tab.addEventListener('dragend', () => {
+      tab.classList.remove('dragging');
+      bar.querySelectorAll('.ptab').forEach((t) => t.classList.remove('drag-over'));
+    });
+    tab.addEventListener('dragover', (e) => { e.preventDefault(); tab.classList.add('drag-over'); });
+    tab.addEventListener('dragleave', () => tab.classList.remove('drag-over'));
+    tab.addEventListener('drop', (e) => {
+      e.preventDefault();
+      tab.classList.remove('drag-over');
+      const draggedId = e.dataTransfer.getData('text/plain');
+      if (!draggedId || draggedId === p.id) return;
+      const currentOrder = orderedProjects.map((x) => x.id);
+      const fromIdx = currentOrder.indexOf(draggedId);
+      const toIdx = currentOrder.indexOf(p.id);
+      if (fromIdx === -1 || toIdx === -1) return;
+      currentOrder.splice(toIdx, 0, currentOrder.splice(fromIdx, 1)[0]);
+      saveOrder(currentOrder);
+      renderProjectTabs();
+    });
+
+    bar.appendChild(tab);
+  });
+}
+
+function renderPostFilter() {
+  const project = getActiveProject();
+  const select = document.getElementById('postFilterSelect');
+  const snapshot = SNAPSHOTS[project.id];
+  const backendReady = !BACKEND_URL.includes('YOUR-SUBDOMAIN');
+
+  // 篩選選項來源：接了後端就用專案自己設定的貼文清單（只列有活動 ID 的）；
+  // 還沒接後端就用快照裡記錄的 postOptions（因為快照只針對有預先抓過的貼文才有資料）。
+  let options;
+  if (backendReady) {
+    options = [{ key: 'all', label: '全部貼文' }, ...(project.posts || []).filter((p) => p.campaignId).map((p) => ({ key: p.campaignId, label: p.label }))];
+  } else {
+    options = (snapshot && snapshot.postOptions) || [{ key: 'all', label: '全部貼文' }];
+  }
+
+  select.innerHTML = options.map((o) => `<option value="${escapeHtml(o.key)}">${escapeHtml(o.label)}</option>`).join('');
+  select.value = state.postFilter;
+  select.disabled = options.length <= 1;
+}
+
+function updateHeader() {
+  const p = getActiveProject();
+  document.getElementById('projectTitle').textContent = p.name;
+}
+
+// 純粹給右邊日期框顯示用，跟後端 getDateRange() 邏輯一致；不會影響實際查詢方式（還是用 preset 名稱送給後端）
+// 把「8/11」這種簡寫日期轉成真正的日期物件（假設是今年）
+function parseShortDate(str) {
+  const parts = (str || '').trim().split('/');
+  if (parts.length !== 2) return null;
+  const month = parseInt(parts[0], 10);
+  const day = parseInt(parts[1], 10);
+  if (!month || !day) return null;
+  return new Date(Date.UTC(new Date().getUTCFullYear(), month - 1, day));
+}
+
+// 找出這個專案裡，所有「已經建立廣告活動」的貼文中，走期最早的起始日
+function getEarliestPlanDate(project) {
+  const dates = [];
+  (project.posts || []).filter((p) => p.campaignId && p.planDates).forEach((p) => {
+    p.planDates.split('、').forEach((range) => {
+      const d = parseShortDate((range || '').split('-')[0]);
+      if (d) dates.push(d);
+    });
+  });
+  if (!dates.length) return null;
+  return new Date(Math.min(...dates.map((d) => d.getTime())));
+}
+
+// 純粹給右邊日期框顯示用，跟後端 getDateRange() 邏輯一致；不會影響實際查詢方式（還是用 preset 名稱送給後端）。
+// 「總走期」「累計至昨日」這兩個技術上是從很早以前開始查（讓 Meta 自動裁到真正有資料的天數），
+// 但畫面上改成顯示「這個專案最早的貼文走期」，不然客戶看到 2015-01-01 會很困惑。
+function computePresetDisplayRange(presetKey, project) {
+  const fmt = (d) => d.toISOString().slice(0, 10);
+  const today = new Date();
+  today.setUTCHours(0, 0, 0, 0);
+  const earliest = project ? getEarliestPlanDate(project) : null;
+  const earliestStr = earliest ? fmt(earliest) : '2015-01-01';
+  switch (presetKey) {
+    case 'today': return { since: fmt(today), until: fmt(today) };
+    case 'yesterday': { const y = new Date(today); y.setUTCDate(y.getUTCDate() - 1); return { since: fmt(y), until: fmt(y) }; }
+    case 'last7': { const s = new Date(today); s.setUTCDate(s.getUTCDate() - 6); return { since: fmt(s), until: fmt(today) }; }
+    case 'thismonth': { const s = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), 1)); return { since: fmt(s), until: fmt(today) }; }
+    case 'lastmonth': {
+      const s = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth() - 1, 1));
+      const e = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), 0));
+      return { since: fmt(s), until: fmt(e) };
+    }
+    case 'alltime': return { since: earliestStr, until: fmt(today) };
+    case 'todate': {
+      const y = new Date(today);
+      y.setUTCDate(y.getUTCDate() - 1);
+      // 如果這個專案最早的貼文走期比「昨天」還晚（例如活動今天才剛開始），代表還沒有一個完整走完的天，
+      // 這時候不要讓 since 超過 until（不然會出現像「8/13-8/12」這種顛倒的區間），改成兩邊都對齊到最早那天。
+      const untilD = new Date(y);
+      const sinceD = earliest && earliest.getTime() > untilD.getTime() ? earliest : (earliest || untilD);
+      const finalUntil = sinceD.getTime() > untilD.getTime() ? sinceD : untilD;
+      return { since: fmt(sinceD), until: fmt(finalUntil) };
+    }
+    default: return null;
+  }
+}
+
+function updateDateDisplay() {
+  const range = computePresetDisplayRange(state.preset, getActiveProject());
+  if (!range) return; // 自訂區間或無法辨識的 preset 就不動它，維持使用者自己打的內容
+  document.getElementById('sinceInput').value = range.since;
+  document.getElementById('untilInput').value = range.until;
+}
+
+function renderPresetGroup() {
+  const box = document.getElementById('presetGroup');
+  box.innerHTML = '';
+  PRESETS.forEach((preset) => {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'presetbtn' + (state.preset === preset.key ? ' active' : '');
+    btn.textContent = preset.label;
+    btn.addEventListener('click', () => {
+      state.preset = preset.key;
+      state.since = '';
+      state.until = '';
+      updateDateDisplay();
+      renderPresetGroup();
+      loadReport();
+      loadOverview();
+    });
+    box.appendChild(btn);
+  });
+}
+
+function renderViewTabs() {
+  const bar = document.getElementById('viewTabs');
+  bar.innerHTML = '';
+  VIEWS.forEach((v) => {
+    const tab = document.createElement('div');
+    tab.className = 'vtab' + (v.key === state.view ? ' active' : '');
+    tab.textContent = v.label;
+    tab.addEventListener('click', () => {
+      state.view = v.key;
+      sortState.key = null;
+      renderViewTabs();
+      updatePostFilterEnabled();
+      loadReport();
+    });
+    bar.appendChild(tab);
+  });
+}
+
+function updatePostFilterEnabled() {
+  const select = document.getElementById('postFilterSelect');
+  select.disabled = select.options.length <= 1;
+  select.title = '';
+}
+
+function buildUrl(project, viewOverride) {
+  const params = new URLSearchParams();
+  params.set('account_id', project.accountId);
+  const view = viewOverride || state.view;
+  const ids = state.postFilter === 'all' ? getCampaignIds(project) : [state.postFilter];
+  params.set('campaign_ids', ids.join(','));
+  params.set('view', view);
+  if (state.since && state.until) {
+    params.set('since', state.since);
+    params.set('until', state.until);
+  } else {
+    params.set('preset', state.preset);
+  }
+  return `${BACKEND_URL}/api/campaign-report?${params.toString()}`;
+}
+
+// 快照模式專用：從「全部貼文」那份清單裡，篩出單一 campaignId 對應的那一列，重新算 totals
+function filterPostDataByCampaign(postData, campaignId) {
+  const row = (postData.rows || []).find((r) => r.key === campaignId);
+  if (!row) return { rows: [], totals: postData.totals };
+  const totals = { ...row };
+  delete totals.key;
+  delete totals.label;
+  delete totals.goal;
+  delete totals.planBudget;
+  delete totals.planDates;
+  delete totals.missing;
+  return { rows: [row], totals };
+}
+
+function mergePostRows(project, liveRows, campaignFilter) {
+  const byId = new Map((liveRows || []).map((r) => [r.key, r]));
+  const zero = { impressions: 0, reach: 0, clicks: 0, link_clicks: 0, cpc_all: 0, cpc_link: 0, cpm: 0, ctr_all: 0, add_to_cart: 0, purchases: 0, purchase_value: 0, roas: 0, spend: 0 };
+
+  // 尚未建立廣告活動（campaignId 是 null）的貼文，直接不顯示；同名（且同優化目標）的貼文合併加總，不重複列出；
+  // 如果有指定 campaignFilter（例如上方篩選貼文選了特定一篇），就只保留那一篇
+  const grouped = new Map();
+  (project.posts || [])
+    .filter((p) => !!p.campaignId)
+    .filter((p) => !campaignFilter || p.campaignId === campaignFilter)
+    .forEach((p) => {
+      const live = byId.get(p.campaignId) || zero;
+      const key = `${p.label}|${p.goal || ''}`;
+      if (!grouped.has(key)) {
+        grouped.set(key, { label: p.label, goal: p.goal, planBudget: 0, planDatesList: [], ...zero });
+      }
+      const g = grouped.get(key);
+      g.planBudget += p.planBudget || 0;
+      g.planDatesList.push(p.planDates);
+      Object.keys(zero).forEach((k) => { g[k] += live[k] || 0; });
+    });
+
+  const rows = [...grouped.values()].map((g) => ({
+    label: g.label,
+    goal: g.goal,
+    planBudget: g.planBudget,
+    planDates: g.planDatesList.join('、'),
+    missing: false,
+    impressions: g.impressions, reach: g.reach, clicks: g.clicks, link_clicks: g.link_clicks,
+    add_to_cart: g.add_to_cart, purchases: g.purchases, purchase_value: g.purchase_value, spend: g.spend,
+    ctr_all: g.impressions > 0 ? Math.round((g.clicks / g.impressions) * 10000) / 100 : 0,
+    cpc_all: g.clicks > 0 ? Math.round((g.spend / g.clicks) * 100) / 100 : 0,
+    cpm: g.impressions > 0 ? Math.round((g.spend / g.impressions) * 100000) / 100 : 0,
+    cpc_link: g.link_clicks > 0 ? Math.round((g.spend / g.link_clicks) * 100) / 100 : 0,
+    roas: g.spend > 0 ? Math.round((g.purchase_value / g.spend) * 100) / 100 : 0,
+  }));
+
+  const totals = rows.reduce((acc, r) => {
+    Object.keys(zero).forEach((k) => { if (!['cpc_all', 'cpc_link', 'cpm', 'ctr_all', 'roas'].includes(k)) acc[k] = (acc[k] || 0) + (r[k] || 0); });
+    return acc;
+  }, {});
+  totals.ctr_all = totals.impressions > 0 ? Math.round((totals.clicks / totals.impressions) * 10000) / 100 : 0;
+  totals.cpc_all = totals.clicks > 0 ? Math.round((totals.spend / totals.clicks) * 100) / 100 : 0;
+  totals.cpm = totals.impressions > 0 ? Math.round((totals.spend / totals.impressions) * 100000) / 100 : 0;
+  totals.cpc_link = totals.link_clicks > 0 ? Math.round((totals.spend / totals.link_clicks) * 100) / 100 : 0;
+  totals.roas = totals.spend > 0 ? Math.round((totals.purchase_value / totals.spend) * 100) / 100 : 0;
+  return { rows, totals };
+}
+
+/* ---------------- 素材縮圖：存在瀏覽器本機（localStorage），换台電腦或清瀏覽器資料會不見，但同一台電腦重整不會消失 ---------------- */
+const THUMB_PREFIX = 'ad_thumb_v1_';
+const THUMB_FIT_PREFIX = 'ad_thumb_fit_v1_';
+function thumbKeyFor(projectId, rowKey) {
+  return THUMB_PREFIX + projectId + '_' + rowKey;
+}
+function getThumb(key) {
+  try { return localStorage.getItem(key); } catch (e) { return null; }
+}
+function setThumb(key, dataUrl) {
+  try { localStorage.setItem(key, dataUrl); return true; } catch (e) { return false; }
+}
+function deleteThumb(key) {
+  try {
+    localStorage.removeItem(key);
+    localStorage.removeItem(THUMB_FIT_PREFIX + key);
+  } catch (e) { /* 忽略 */ }
+}
+function getThumbFit(key) {
+  try { return localStorage.getItem(THUMB_FIT_PREFIX + key) || 'contain'; } catch (e) { return 'contain'; }
+}
+function setThumbFit(key, fit) {
+  try { localStorage.setItem(THUMB_FIT_PREFIX + key, fit); } catch (e) { /* 忽略 */ }
+}
+
+function renderAdTable(data, banner) {
+  const wrap = document.getElementById('tableWrap');
+  const theadCols = ['<th>縮圖</th>', `<th class="sortable" data-sort-key="__label">廣告${sortArrow('__label')}</th>`, ...metricHeaderCells(METRIC_COLS)].join('');
+  const bodyRows = data.rows.map((row) => {
+    const key = thumbKeyFor(state.projectId, row.key);
+    const saved = getThumb(key);
+    let thumbCell;
+    if (saved) {
+      const fit = getThumbFit(key);
+      thumbCell = `
+        <div class="thumb-box has-img" data-thumbkey="${escapeHtml(key)}">
+          <img src="${saved}" alt="" style="object-fit:${fit};">
+          <button type="button" class="thumb-del" data-thumbkey="${escapeHtml(key)}" title="刪除縮圖">×</button>
+          <button type="button" class="thumb-fit-toggle" data-thumbkey="${escapeHtml(key)}" title="切換完整顯示／裁切填滿">⤢</button>
+        </div>`;
+    } else {
+      thumbCell = `<div class="thumb-box" data-thumbkey="${escapeHtml(key)}">+ 上傳<br>縮圖</div>`;
+    }
+    const cells = METRIC_COLS.map((c) => `<td>${fmtCell(c, row[c.key])}</td>`).join('');
+    return `<tr><td>${thumbCell}</td><td>${escapeHtml(row.label)}</td>${cells}</tr>`;
+  }).join('');
+  const totalCells = METRIC_COLS.map((c) => `<td>${fmtCell(c, data.totals[c.key])}</td>`).join('');
+
+  wrap.innerHTML = `
+    ${banner}
+    <table>
+      <thead><tr>${theadCols}</tr></thead>
+      <tbody>
+        ${bodyRows || '<tr><td colspan="' + (METRIC_COLS.length + 2) + '" style="text-align:center;color:var(--text-2);">這段期間沒有資料</td></tr>'}
+        <tr class="totalrow"><td></td><td>總計</td>${totalCells}</tr>
+      </tbody>
+    </table>
+    <input type="file" accept="image/*" id="thumbFileInput" style="display:none;">
+  `;
+
+  attachSortHandlers(wrap, 'ad');
+
+  const fileInput = document.getElementById('thumbFileInput');
+
+  wrap.querySelectorAll('.thumb-box:not(.has-img)').forEach((box) => {
+    box.addEventListener('click', () => {
+      const key = box.dataset.thumbkey;
+      fileInput.onchange = (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = () => {
+          const ok = setThumb(key, reader.result);
+          if (!ok) {
+            alert('圖片存不進去（通常是圖片太大或瀏覽器空間不足），建議換一張小一點的圖片再試一次。');
+            return;
+          }
+          renderAdTable(data, banner);
+        };
+        reader.readAsDataURL(file);
+      };
+      fileInput.click();
+    });
+  });
+
+  wrap.querySelectorAll('.thumb-del').forEach((btn) => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const key = btn.dataset.thumbkey;
+      if (!confirm('確定要刪除這張縮圖嗎？')) return;
+      deleteThumb(key);
+      renderAdTable(data, banner);
+    });
+  });
+
+  wrap.querySelectorAll('.thumb-fit-toggle').forEach((btn) => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const key = btn.dataset.thumbkey;
+      const current = getThumbFit(key);
+      setThumbFit(key, current === 'contain' ? 'cover' : 'contain');
+      renderAdTable(data, banner);
+    });
+  });
+}
+
+function renderStatsStrip(totals) {
+  const strip = document.getElementById('statsStrip');
+  const items = [
+    { label: '花費金額', v: fmtNum(totals.spend) },
+    { label: '曝光', v: fmtNum(totals.impressions) },
+    { label: '點擊', v: fmtNum(totals.clicks) },
+    { label: 'CTR', v: totals.ctr_all + '%' },
+    { label: '購買', v: fmtNum(totals.purchases) },
+    { label: 'ROAS', v: fmtNum(totals.roas) },
+  ];
+  strip.innerHTML = items.map((it) => `
+    <div class="stat-mini"><label>${it.label}</label><div class="v">${it.v}</div></div>
+  `).join('');
+}
+
+let chartInstances = [];
+const CHART_PALETTE = ['#8FB8D9', '#F0B88F', '#B5A8D5', '#E5A3BE', '#D9CB8F', '#9DC9B7', '#C9A0C4', '#A8C48A'];
+const AGE_ORDER = ['18-24', '25-34', '35-44', '45-54', '55-64', '65+'];
+
+function destroyCharts() {
+  chartInstances.forEach((c) => c.destroy());
+  chartInstances = [];
+}
+
+function addChartCard(gridEl, title, buildConfig) {
+  const card = document.createElement('div');
+  card.className = 'chartcard';
+  card.innerHTML = `<h4>${escapeHtml(title)}</h4><div class="canvaswrap"><canvas></canvas></div>`;
+  gridEl.appendChild(card);
+  const config = buildConfig();
+  if (!config) {
+    card.querySelector('.canvaswrap').innerHTML = '<div class="nodata">尚無資料</div>';
+    return;
+  }
+  const canvas = card.querySelector('canvas');
+  const chart = new Chart(canvas.getContext('2d'), config);
+  chartInstances.push(chart);
+}
+
+function hasAnyPurchases(rows) {
+  return (rows || []).some((r) => (r.purchases || 0) > 0);
+}
+
+function renderChart(view, data, ctx) {
+  const wrap = document.getElementById('chartWrap');
+  const grid = document.getElementById('chartGrid');
+
+  if (!window.Chart || !['daily', 'gender', 'age', 'placement', 'post'].includes(view)) {
+    wrap.style.display = 'none';
+    return;
+  }
+  wrap.style.display = 'block';
+  destroyCharts();
+  grid.innerHTML = '';
+
+  if (view === 'post') {
+    addChartCard(grid, '各貼文預算 vs 實際花費', () => ({
+      type: 'bar',
+      data: {
+        labels: data.rows.map((r) => (r.goal ? `${r.label}(${r.goal})` : r.label)),
+        datasets: [
+          { label: '預算', data: data.rows.map((r) => r.planBudget || 0), backgroundColor: '#dfe3ee', borderRadius: 4 },
+          { label: '實際花費', data: data.rows.map((r) => r.spend || 0), backgroundColor: CHART_PALETTE[0], borderRadius: 4 },
+        ],
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false, indexAxis: 'y',
+        plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11 } } } },
+        scales: { x: { beginAtZero: true, ticks: { font: { size: 10 } } }, y: { ticks: { font: { size: 10 } } } },
+      },
+    }));
+    return;
+  }
+
+  if (view === 'daily') {
+    renderDailyChart(grid, ctx, data);
+    return;
+  }
+
+  if (view === 'gender') {
+    addChartCard(grid, '男女投遞花費佔比', () => ({
+      type: 'doughnut',
+      data: {
+        labels: data.rows.map((r) => GENDER_LABEL[r.key] || r.label),
+        datasets: [{ data: data.rows.map((r) => r.spend), backgroundColor: CHART_PALETTE, borderWidth: 0 }],
+      },
+      options: { responsive: true, maintainAspectRatio: false, cutout: '58%', plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11 } } } } },
+    }));
+    addChartCard(grid, '性別購買佔比', () => {
+      if (!hasAnyPurchases(data.rows)) return null;
+      return {
+        type: 'doughnut',
+        data: {
+          labels: data.rows.map((r) => GENDER_LABEL[r.key] || r.label),
+          datasets: [{ data: data.rows.map((r) => r.purchases), backgroundColor: CHART_PALETTE, borderWidth: 0 }],
+        },
+        options: { responsive: true, maintainAspectRatio: false, cutout: '58%', plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11 } } } } },
+      };
+    });
+    return;
+  }
+
+  if (view === 'age') {
+    const sorted = [...data.rows].sort((a, b) => AGE_ORDER.indexOf(a.key) - AGE_ORDER.indexOf(b.key));
+    addChartCard(grid, '各年齡層花費', () => ({
+      type: 'bar',
+      data: { labels: sorted.map((r) => r.key), datasets: [{ label: '花費金額', data: sorted.map((r) => r.spend), backgroundColor: CHART_PALETTE[0], borderRadius: 4 }] },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: { y: { beginAtZero: true, ticks: { font: { size: 10 } } }, x: { ticks: { font: { size: 10 } } } },
+      },
+    }));
+    addChartCard(grid, '各年齡層購買數', () => {
+      if (!hasAnyPurchases(data.rows)) return null;
+      return {
+        type: 'bar',
+        data: { labels: sorted.map((r) => r.key), datasets: [{ label: '購買數', data: sorted.map((r) => r.purchases), backgroundColor: CHART_PALETTE[2], borderRadius: 4 }] },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: { y: { beginAtZero: true, ticks: { font: { size: 10 } } }, x: { ticks: { font: { size: 10 } } } },
+        },
+      };
+    });
+    return;
+  }
+
+  if (view === 'placement') {
+    addChartCard(grid, '各版位花費', () => ({
+      type: 'bar',
+      data: { labels: data.rows.map((r) => POSITION_LABEL[r.key] || r.label), datasets: [{ label: '花費金額', data: data.rows.map((r) => r.spend), backgroundColor: CHART_PALETTE[1], borderRadius: 4 }] },
+      options: {
+        responsive: true, maintainAspectRatio: false, indexAxis: 'y',
+        plugins: { legend: { display: false } },
+        scales: { x: { beginAtZero: true, ticks: { font: { size: 10 } } }, y: { ticks: { font: { size: 10 } } } },
+      },
+    }));
+    return;
+  }
+}
+
+/* Daily 分頁：改成多線圖，每篇貼文各自一條線（花費），另外疊一條淺色虛線代表該貼文的「日均預算」參考線，
+   右側副座標軸再疊一條「購買」加總線。 */
+function renderDailyChart(grid, ctx, combinedData) {
+  const project = getActiveProject();
+  const posts = (project.posts || []).filter((p) => p.campaignId);
+
+  // 只看單一貼文時：維持單線 + 花費/曝光雙軸（跟原本一樣直覺）
+  if (state.postFilter !== 'all') {
+    addChartCard(grid, 'Daily 走勢（花費 / 曝光）', () => ({
+      data: {
+        labels: combinedData.rows.map((r) => r.label),
+        datasets: [
+          { type: 'bar', label: '花費金額', data: combinedData.rows.map((r) => r.spend), backgroundColor: CHART_PALETTE[0], borderRadius: 4, yAxisID: 'y' },
+          { type: 'line', label: '曝光', data: combinedData.rows.map((r) => r.impressions), borderColor: CHART_PALETTE[2], backgroundColor: CHART_PALETTE[2], tension: 0.3, yAxisID: 'y1' },
+        ],
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false, interaction: { mode: 'index', intersect: false },
+        plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11 } } } },
+        scales: {
+          y: { position: 'left', title: { display: true, text: '花費金額', font: { size: 11 } }, ticks: { font: { size: 10 } } },
+          y1: { position: 'right', grid: { drawOnChartArea: false }, title: { display: true, text: '曝光', font: { size: 11 } }, ticks: { font: { size: 10 } } },
+          x: { ticks: { font: { size: 10 } } },
+        },
+      },
+    }));
+    return;
+  }
+
+  // 全部貼文：每篇貼文各一條花費線 + 日均預算參考線 + 購買加總線
+  addChartCard(grid, '各貼文每日花費走勢（虛線＝該貼文日均預算）', () => {
+    const perPost = posts.map((p, idx) => {
+      const rows = ctx.getPostDaily(p.campaignId);
+      return { post: p, rows, color: CHART_PALETTE[idx % CHART_PALETTE.length] };
+    }).filter((p) => p.rows && p.rows.length);
+    if (!perPost.length) return null;
+
+    const allDates = Array.from(new Set(perPost.flatMap((p) => p.rows.map((r) => r.key)))).sort();
+    const datasets = [];
+    perPost.forEach((p) => {
+      const byDate = new Map(p.rows.map((r) => [r.key, r.spend]));
+      datasets.push({
+        label: p.post.goal ? `${p.post.label}(${p.post.goal})` : p.post.label,
+        data: allDates.map((d) => byDate.get(d) ?? null),
+        borderColor: p.color, backgroundColor: p.color, tension: 0.3, spanGaps: true,
+      });
+      if (p.post.planBudget && allDates.length) {
+        const dayCount = p.rows.length || 1;
+        const dailyPace = Math.round(p.post.planBudget / Math.max(dayCount, 1));
+        datasets.push({
+          label: `${p.post.label} 日均預算`, data: allDates.map(() => dailyPace),
+          borderColor: p.color, borderDash: [4, 4], borderWidth: 1, pointRadius: 0, backgroundColor: 'transparent',
+        });
+      }
+    });
+
+    return {
+      type: 'line',
+      data: { labels: allDates, datasets },
+      options: {
+        responsive: true, maintainAspectRatio: false, interaction: { mode: 'index', intersect: false },
+        plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 10 } } } },
+        scales: {
+          y: { beginAtZero: true, title: { display: true, text: '花費金額', font: { size: 11 } }, ticks: { font: { size: 10 } } },
+          x: { ticks: { font: { size: 10 } } },
+        },
+      },
+    };
+  });
+
+  addChartCard(grid, '每日購買數（全部貼文加總）', () => {
+    if (!hasAnyPurchases(combinedData.rows)) return null;
+    return {
+      type: 'bar',
+      data: { labels: combinedData.rows.map((r) => r.label), datasets: [{ label: '購買數', data: combinedData.rows.map((r) => r.purchases), backgroundColor: CHART_PALETTE[2], borderRadius: 4 }] },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: { y: { beginAtZero: true, ticks: { font: { size: 10 } } }, x: { ticks: { font: { size: 10 } } } },
+      },
+    };
+  });
+}
+
+/* ================= 頁面頂部常駐的「總覽」區塊（不是分頁，跟你選哪個 Sheet 無關，只跟日期區間有關） ================= */
+
+let overviewCharts = [];
+
+function pctChange(cur, prev) {
+  if (prev === null || prev === undefined || prev === 0 || cur === null || cur === undefined) return null;
+  return ((cur - prev) / prev) * 100;
+}
+
+function fmtCompact(n) {
+  n = n || 0;
+  if (n >= 10000) return (n / 10000).toFixed(1) + '萬';
+  return fmtNum(n);
+}
+
+function computePrevRange(since, until) {
+  const s = new Date(since + 'T00:00:00Z');
+  const u = new Date(until + 'T00:00:00Z');
+  const days = Math.round((u - s) / 86400000) + 1;
+  const prevUntil = new Date(s);
+  prevUntil.setUTCDate(prevUntil.getUTCDate() - 1);
+  const prevSince = new Date(prevUntil);
+  prevSince.setUTCDate(prevSince.getUTCDate() - (days - 1));
+  const fmt = (d) => d.toISOString().slice(0, 10);
+  return { since: fmt(prevSince), until: fmt(prevUntil) };
+}
+
+function buildOverviewUrl(project, view, rangeOverride, presetOverride) {
+  const params = new URLSearchParams();
+  params.set('account_id', project.accountId);
+  params.set('campaign_ids', getCampaignIds(project).join(','));
+  params.set('view', view);
+  if (presetOverride) {
+    params.set('preset', presetOverride.preset);
+  } else if (rangeOverride) {
+    params.set('since', rangeOverride.since);
+    params.set('until', rangeOverride.until);
+  } else if (state.since && state.until) {
+    params.set('since', state.since);
+    params.set('until', state.until);
+  } else {
+    params.set('preset', state.preset);
+  }
+  return `${BACKEND_URL}/api/campaign-report?${params.toString()}`;
+}
+
+function renderOverviewStats(totals, prevTotals) {
+  const el = document.getElementById('overviewStats');
+  if (!totals) { el.innerHTML = ''; return; }
+  const cpa = totals.purchases > 0 ? Math.round(totals.spend / totals.purchases) : null;
+  const prevCpa = prevTotals && prevTotals.purchases > 0 ? Math.round(prevTotals.spend / prevTotals.purchases) : null;
+  const items = [
+    { label: '花費', def: METRIC_DEFINITIONS.spend, v: 'NT$' + fmtNum(totals.spend), delta: pctChange(totals.spend, prevTotals && prevTotals.spend), lowerIsBetter: true },
+    { label: '曝光', def: METRIC_DEFINITIONS.impressions, v: fmtCompact(totals.impressions), delta: pctChange(totals.impressions, prevTotals && prevTotals.impressions) },
+    { label: '加入購物車', def: METRIC_DEFINITIONS.add_to_cart, v: fmtNum(totals.add_to_cart), delta: pctChange(totals.add_to_cart, prevTotals && prevTotals.add_to_cart) },
+    { label: '購買', def: METRIC_DEFINITIONS.purchases, v: fmtNum(totals.purchases), delta: pctChange(totals.purchases, prevTotals && prevTotals.purchases) },
+    { label: '轉換值', def: METRIC_DEFINITIONS.purchase_value, v: 'NT$' + fmtNum(totals.purchase_value), delta: pctChange(totals.purchase_value, prevTotals && prevTotals.purchase_value) },
+    { label: 'ROAS', def: METRIC_DEFINITIONS.roas, v: totals.roas + 'x', delta: pctChange(totals.roas, prevTotals && prevTotals.roas) },
+    { label: 'CPA（購買）', def: 'CPA（購買）＝ 花費金額 ÷ 購買數，平均每一次購買花了多少廣告費。', v: cpa !== null ? 'NT$' + fmtNum(cpa) : '—', delta: (cpa !== null && prevCpa !== null) ? pctChange(cpa, prevCpa) : null, lowerIsBetter: true },
+  ];
+  el.innerHTML = items.map((it) => {
+    let deltaHtml = '<div class="delta" style="color:var(--text-2);">上期比較：無資料</div>';
+    if (it.delta !== null && isFinite(it.delta)) {
+      const goodDirection = it.lowerIsBetter ? it.delta <= 0 : it.delta >= 0;
+      const cls = goodDirection ? 'up' : 'down';
+      const sign = it.delta > 0 ? '+' : '';
+      deltaHtml = `<div class="delta ${cls}">${sign}${it.delta.toFixed(1)}%</div>`;
+    }
+    const info = it.def ? `<span class="info-icon" title="${escapeHtml(it.def)}">ⓘ</span>` : '';
+    return `<div class="overview-stat"><label>${it.label}${info}</label><div class="v">${it.v}</div>${deltaHtml}</div>`;
+  }).join('');
+}
+
+function renderOverviewTrendAndDonut(dailyData, postData) {
+  overviewCharts.forEach((c) => c.destroy());
+  overviewCharts = [];
+  if (!window.Chart) return;
+
+  const trendCanvas = document.getElementById('overviewTrendCanvas');
+  const donutCanvas = document.getElementById('overviewDonutCanvas');
+
+  if (dailyData && dailyData.rows && dailyData.rows.length) {
+    const trend = new Chart(trendCanvas.getContext('2d'), {
+      data: {
+        labels: dailyData.rows.map((r) => r.label),
+        datasets: [
+          { type: 'bar', label: '花費', data: dailyData.rows.map((r) => r.spend), backgroundColor: CHART_PALETTE[0], borderRadius: 4, yAxisID: 'y' },
+          { type: 'line', label: '購買', data: dailyData.rows.map((r) => r.purchases), borderColor: CHART_PALETTE[2], backgroundColor: CHART_PALETTE[2], tension: 0.3, yAxisID: 'y2' },
+          { type: 'line', label: 'ROAS', data: dailyData.rows.map((r) => r.roas), borderColor: CHART_PALETTE[1], backgroundColor: CHART_PALETTE[1], tension: 0.3, yAxisID: 'y1' },
+        ],
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false, interaction: { mode: 'index', intersect: false },
+        plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11 } } } },
+        scales: {
+          y: { position: 'left', beginAtZero: true, title: { display: true, text: '花費', font: { size: 11 } }, ticks: { font: { size: 10 } } },
+          y1: { position: 'right', min: 0, grid: { drawOnChartArea: false }, title: { display: true, text: 'ROAS', font: { size: 11 } }, ticks: { font: { size: 10 } } },
+          y2: { display: false, min: 0 },
+          x: { ticks: { font: { size: 10 } } },
+        },
+      },
+    });
+    overviewCharts.push(trend);
+  } else {
+    trendCanvas.parentElement.innerHTML = '<div class="nodata">尚無資料</div>';
+  }
+
+  if (postData && postData.rows && postData.rows.length) {
+    const donut = new Chart(donutCanvas.getContext('2d'), {
+      type: 'doughnut',
+      data: {
+        labels: postData.rows.map((r) => (r.goal ? `${r.label}(${r.goal})` : r.label)),
+        datasets: [{ data: postData.rows.map((r) => r.spend), backgroundColor: CHART_PALETTE, borderWidth: 0 }],
+      },
+      options: { responsive: true, maintainAspectRatio: false, cutout: '55%', plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 10 } } } } },
+    });
+    overviewCharts.push(donut);
+  } else {
+    donutCanvas.parentElement.innerHTML = '<div class="nodata">尚無資料</div>';
+  }
+}
+
+async function loadOverview() {
+  const project = getActiveProject();
+  const region = document.getElementById('overviewRegion');
+
+  if (!getCampaignIds(project).length) {
+    region.style.display = 'none';
+    return;
+  }
+  region.style.display = 'block';
+
+  const backendReady = !BACKEND_URL.includes('YOUR-SUBDOMAIN');
+  const snapshot = SNAPSHOTS[project.id];
+
+  if (!backendReady) {
+    if (!snapshot) {
+      renderOverviewStats(null, null);
+      renderOverviewTrendAndDonut(null, null);
+      return;
+    }
+    // 快照模式沒有「上一期」資料可以比較，統計卡只顯示數字，變化率留白
+    renderOverviewStats(snapshot.data.all.post.totals, null);
+    renderOverviewTrendAndDonut(snapshot.data.all.daily, snapshot.data.all.post);
+    return;
+  }
+
+  try {
+    const trendRange = { preset: 'last7' }; // 每日趨勢固定只看近7天，避免選「總走期」時長條圖被拉得又長又難讀
+    const [postRes, dailyRes] = await Promise.all([
+      fetch(buildOverviewUrl(project, 'post')),
+      fetch(buildOverviewUrl(project, 'daily', null, trendRange)),
+    ]);
+    const postJson = await postRes.json();
+    const dailyJson = await dailyRes.json();
+    if (postJson.error) throw new Error(postJson.error);
+    if (dailyJson.error) throw new Error(dailyJson.error);
+    const postData = mergePostRows(project, postJson.rows);
+
+    let prevTotals = null;
+    try {
+      const prevRange = computePrevRange(postJson.since, postJson.until);
+      const prevRes = await fetch(buildOverviewUrl(project, 'post', prevRange));
+      const prevJson = await prevRes.json();
+      if (!prevJson.error) prevTotals = prevJson.totals;
+    } catch (e) {
+      // 拿不到上一期資料就不顯示變化率，不影響主要數字
+    }
+
+    renderOverviewStats(postData.totals, prevTotals);
+    renderOverviewTrendAndDonut(dailyJson, postData);
+  } catch (err) {
+    document.getElementById('overviewStats').innerHTML = `<div class="statebox error">總覽讀取失敗：${escapeHtml(err.message)}</div>`;
+  }
+}
+
+function renderTable(view, data, isSnapshot, snapshot, ctx) {
+  const wrap = document.getElementById('tableWrap');
+  const banner = isSnapshot
+    ? `<div class="snapshot-banner">📸 這是 ${escapeHtml(snapshot.fetchedAt)} 抓取的快照資料（${escapeHtml(snapshot.since)} ~ ${escapeHtml(snapshot.until)}），不會自動更新。接上後端後會自動變成即時資料。</div>`
+    : '';
+
+  renderChart(view, data, ctx);
+
+  if (view === 'post') {
+    const theadCols = [`<th class="sortable" data-sort-key="__label">貼文${sortArrow('__label')}</th>`, '<th>優化目標</th>', '<th>狀態</th>', '<th>預算</th>', '<th>走期</th>', ...metricHeaderCells(METRIC_COLS)].join('');
+    const bodyRows = data.rows.map((row) => {
+      const status = row.spend > 0 || row.impressions > 0 ? '投放中' : '尚未開始曝光';
+      const cells = METRIC_COLS.map((c) => `<td>${fmtCell(c, row[c.key])}</td>`).join('');
+      return `<tr><td>${escapeHtml(row.label)}</td><td>${escapeHtml(row.goal || '—')}</td><td>${status}</td><td>${row.planBudget ? 'NT$' + fmtNum(row.planBudget) : '—'}</td><td>${escapeHtml(row.planDates || '—')}</td>${cells}</tr>`;
+    }).join('');
+    const totalCells = METRIC_COLS.map((c) => `<td>${fmtCell(c, data.totals[c.key])}</td>`).join('');
+    wrap.innerHTML = `
+      ${banner}
+      <table>
+        <thead><tr>${theadCols}</tr></thead>
+        <tbody>
+          ${bodyRows || '<tr><td colspan="' + (METRIC_COLS.length + 4) + '" style="text-align:center;color:var(--text-2);">這個專案還沒有任何已建立的廣告活動</td></tr>'}
+          <tr class="totalrow"><td>總計</td><td></td><td></td><td></td><td></td>${totalCells}</tr>
+        </tbody>
+      </table>
+    `;
+    attachSortHandlers(wrap, 'post');
+    return;
+  }
+
+  if (view === 'ad') {
+    renderAdTable(data, banner);
+    return;
+  }
+
+  const firstLabel = FIRST_COL_LABEL[view];
+  const theadCols = [`<th class="sortable" data-sort-key="__label">${firstLabel}${sortArrow('__label')}</th>`, ...metricHeaderCells(METRIC_COLS)].join('');
+  const bodyRows = data.rows.map((row) => {
+    const cells = METRIC_COLS.map((c) => `<td>${fmtCell(c, row[c.key])}</td>`).join('');
+    return `<tr><td>${escapeHtml(labelForRow(view, row))}</td>${cells}</tr>`;
+  }).join('');
+  const totalCells = METRIC_COLS.map((c) => `<td>${fmtCell(c, data.totals[c.key])}</td>`).join('');
+  const placementNote = view === 'placement'
+    ? '<div class="overview-note" style="margin:16px 20px 0;">目前這個專案的投遞平台是 <b>Facebook</b>（用 publisher_platform 拆解確認過，還沒有用到 Instagram / Threads 版位）。之後如果開始投 IG 或 Threads，版位名稱會自動顯示對應平台。</div>'
+    : '';
+
+  wrap.innerHTML = `
+    ${banner}
+    <table>
+      <thead><tr>${theadCols}</tr></thead>
+      <tbody>
+        ${bodyRows || '<tr><td colspan="' + (METRIC_COLS.length + 1) + '" style="text-align:center;color:var(--text-2);">這段期間沒有資料</td></tr>'}
+        <tr class="totalrow"><td>總計</td>${totalCells}</tr>
+      </tbody>
+    </table>
+    ${placementNote}
+  `;
+  attachSortHandlers(wrap, view);
+}
+
+function escapeHtml(s) {
+  return (s || '').toString().replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+
+function setUpdatedNow() {
+  const now = new Date();
+  const pad = (n) => String(n).padStart(2, '0');
+  document.getElementById('updatedAt').textContent =
+    `最後更新 ${now.getFullYear()}/${pad(now.getMonth() + 1)}/${pad(now.getDate())} ${pad(now.getHours())}:${pad(now.getMinutes())}（此頁開著時每4小時自動更新一次）`;
+}
+
+async function loadReport() {
+  const project = getActiveProject();
+  const wrap = document.getElementById('tableWrap');
+  const btn = document.getElementById('refreshBtn');
+  const statsStrip = document.getElementById('statsStrip');
+
+  if (!getCampaignIds(project).length) {
+    wrap.innerHTML = '<div class="statebox">這個專案還沒有設定任何廣告活動 ID，暫時無法拉取資料。</div>';
+    statsStrip.innerHTML = '';
+    return;
+  }
+
+  const backendReady = !BACKEND_URL.includes('YOUR-SUBDOMAIN');
+  const snapshot = SNAPSHOTS[project.id];
+  const scopeKey = state.postFilter;
+
+  // 還沒接後端：如果有快照，先顯示快照；沒有快照就提示還沒設定
+  if (!backendReady) {
+    if (!snapshot) {
+      wrap.innerHTML = '<div class="statebox error">還沒有設定後端網址，這個專案也還沒有快照資料。</div>';
+      statsStrip.innerHTML = '';
+      return;
+    }
+    let data;
+    if (state.view === 'post' && scopeKey !== 'all') {
+      // 快照只有「全部貼文」的貼文清單，篩選特定一篇時用同一份清單過濾出那一列
+      data = filterPostDataByCampaign(snapshot.data.all.post, scopeKey);
+    } else {
+      const scoped = snapshot.data[scopeKey];
+      data = scoped && scoped[state.view];
+    }
+    if (!data) {
+      wrap.innerHTML = '<div class="statebox">這個快照還沒有包含這個篩選條件 / 分頁的資料。</div>';
+      statsStrip.innerHTML = '';
+      return;
+    }
+    const chartCtx = {
+      getPostDaily: (campaignId) => (snapshot.data[campaignId] ? snapshot.data[campaignId].daily.rows : []),
+      getPostData: () => snapshot.data.all.post,
+    };
+    renderTableSorted({ view: state.view, data, isSnapshot: true, snapshot, ctx: chartCtx });
+    document.getElementById('updatedAt').textContent = `快照抓取於 ${snapshot.fetchedAt}（${snapshot.since} ~ ${snapshot.until}，尚未接上即時後端）`;
+    return;
+  }
+
+  btn.disabled = true;
+  wrap.innerHTML = '<div class="statebox">正在從 Meta API 抓取資料…</div>';
+
+  try {
+    const res = await fetch(buildUrl(project));
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+
+    // 「貼文」視圖：把後端回來的真實活動數字，跟你自己填的貼文清單合併起來；
+    // 如果篩選貼文選了特定一篇，貼文分頁也只顯示那一篇（不再固定顯示全部）
+    const renderData = state.view === 'post'
+      ? mergePostRows(project, data.rows, state.postFilter === 'all' ? null : state.postFilter)
+      : data;
+
+    const chartCtx = { getPostDaily: () => [], getPostData: () => renderData };
+
+    // Daily + 全部貼文：額外平行抓每篇貼文自己的逐日資料，畫多線圖用
+    if (state.view === 'daily' && state.postFilter === 'all') {
+      const posts = (project.posts || []).filter((p) => p.campaignId);
+      const results = await Promise.all(posts.map(async (p) => {
+        try {
+          const url = new URL(`${BACKEND_URL}/api/campaign-report`);
+          url.searchParams.set('account_id', project.accountId);
+          url.searchParams.set('campaign_ids', p.campaignId);
+          url.searchParams.set('view', 'daily');
+          if (state.since && state.until) {
+            url.searchParams.set('since', state.since);
+            url.searchParams.set('until', state.until);
+          } else {
+            url.searchParams.set('preset', state.preset);
+          }
+          const r = await fetch(url.toString());
+          const j = await r.json();
+          return [p.campaignId, j.rows || []];
+        } catch (e) {
+          return [p.campaignId, []];
+        }
+      }));
+      const dailyMap = new Map(results);
+      chartCtx.getPostDaily = (campaignId) => dailyMap.get(campaignId) || [];
+    }
+
+    renderTableSorted({ view: state.view, data: renderData, isSnapshot: false, snapshot: null, ctx: chartCtx });
+    setUpdatedNow();
+  } catch (err) {
+    wrap.innerHTML = `<div class="statebox error">讀取失敗：${escapeHtml(err.message)}</div>`;
+    statsStrip.innerHTML = '';
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+document.getElementById('sinceInput').addEventListener('change', () => {
+  state.since = document.getElementById('sinceInput').value;
+});
+document.getElementById('untilInput').addEventListener('change', () => {
+  state.until = document.getElementById('untilInput').value;
+  if (state.since && state.until) {
+    renderPresetGroupCleared();
+    loadReport();
+    loadOverview();
+  }
+});
+function renderPresetGroupCleared() {
+  state.preset = '';
+  renderPresetGroup();
+}
+document.getElementById('refreshBtn').addEventListener('click', () => {
+  loadReport();
+  loadOverview();
+});
+document.getElementById('postFilterSelect').addEventListener('change', (e) => {
+  state.postFilter = e.target.value;
+  sortState.key = null;
+  loadReport();
+});
+
+renderProjectTabs();
+updateHeader();
+renderPresetGroup();
+updateDateDisplay();
+renderViewTabs();
+renderPostFilter();
+updatePostFilterEnabled();
+loadReport();
+loadOverview();
+
+/* ---------------- 自動更新（只有接上真後端才有意義；快照模式下每次重跑都是同一份資料，所以自動跳過） ---------------- */
+const AUTO_REFRESH_MS = 4 * 60 * 60 * 1000; // 4 小時
+setInterval(() => {
+  const backendReady = !BACKEND_URL.includes('YOUR-SUBDOMAIN');
+  if (!backendReady) return; // 快照模式：重新整理也不會有新資料，不用浪費請求
+  loadReport();
+  loadOverview();
+}, AUTO_REFRESH_MS);
+</script>
+</body>
+</html>
